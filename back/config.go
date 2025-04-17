@@ -8,6 +8,7 @@ import (
 const (
 	StorageTypeLocal      = "local"
 	StorageTypeCloudflare = "cloudflare"
+	StorageTypeNone       = "none"
 )
 
 type Config struct {
@@ -27,7 +28,7 @@ var (
 func GetConfig() *Config {
 	configOnce.Do(func() {
 		configInstance = &Config{
-			StorageType: getEnv("STORAGE_TYPE", StorageTypeLocal),
+			StorageType: getEnv("STORAGE_TYPE", StorageTypeNone),
 			R2Endpoint:  getEnv("R2_ENDPOINT", ""),
 			R2AccessKey: getEnv("R2_ACCESS_KEY", ""),
 			R2SecretKey: getEnv("R2_SECRET_KEY", ""),
