@@ -33,6 +33,9 @@ func getStorageService() StorageService {
 		}
 		return service
 	}
+	if cfg.StorageType == StorageTypeNone {
+		return &NoneStorageService{}
+	}
 	// Default to local storage
 	return &LocalStorageService{}
 }
@@ -41,6 +44,11 @@ func getStorageService() StorageService {
 type LocalStorageService struct{}
 
 func (s *LocalStorageService) LoadData(filePath string, v interface{}) error {
+	// Ensure dataFolder exists
+	if err := os.MkdirAll(dataFolder, os.ModePerm); err != nil {
+		return errors.New("Could not create data folder: " + err.Error())
+	}
+
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return nil // No file, treat as empty
 	}
@@ -121,4 +129,15 @@ func (s *CloudflareR2StorageService) SaveData(filePath string, v interface{}) er
 		Body:   bytes.NewReader(data),
 	})
 	return err
+}
+
+// NoneStorageService implements StorageService but does nothing.
+type NoneStorageService struct{}
+
+func (s *NoneStorageService) LoadData(filePath string, v interface{}) error {
+	return nil
+}
+
+func (s *NoneStorageService) SaveData(filePath string, v interface{}) error {
+	return nil
 }

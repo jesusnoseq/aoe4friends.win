@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  AoE4FriendsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: back
+      Runtime: go1.x
+      CodeUri: .
+      Timeout: 10
+      Events:
+        AnalyzeApi:
+          Type: Api
+          Properties:
+            Path: /analyze
+            Method: get
