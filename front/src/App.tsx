@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Search, Trophy, Swords, Users2, Timer } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -10,21 +10,87 @@ interface GameStats {
   averageGameLength: string;
 }
 
+interface PlayerSuggestion {
+  name: string;
+  profile_id: number;
+  avatars: { small: string; medium: string; full: string };
+  country?: string;
+  rating?: number;
+  // ...other fields if needed
+}
+
 function App() {
   const [profileId, setProfileId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [stats, setStats] = useState<GameStats | null>(null);
   const [error, setError] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<PlayerSuggestion | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Helper: check if input is a number (profile id)
+  const isProfileId = (value: string) => /^\d+$/.test(value.trim());
+
+  // Autocomplete nickname search
+  const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setProfileId(value);
+    setSelectedSuggestion(null);
+    setError('');
+    if (!value.trim() || isProfileId(value)) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://aoe4world.com/api/v0/players/autocomplete?leaderboard=rm_team&query=${encodeURIComponent(value)}`
+      );
+      const data = await res.json();
+      setSuggestions(data.players || []);
+      setShowSuggestions(true);
+    } catch {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle suggestion click
+  const handleSuggestionClick = (player: PlayerSuggestion) => {
+    setProfileId(player.profile_id.toString());
+    setSelectedSuggestion(player);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setError('');
+    // Optionally, focus input out
+    inputRef.current?.blur();
+  };
+
+  // Hide suggestions on blur (with delay for click)
+  const handleInputBlur = () => setTimeout(() => setShowSuggestions(false), 100);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profileId.trim()) {
-      setError('Please enter a profile ID');
+    let id = profileId.trim();
+    if (!id) {
+      setError('Please enter a profile ID or nickname');
       return;
     }
-
+    // If not a number and a suggestion is selected, use its profile_id
+    if (!isProfileId(id)) {
+      if (selectedSuggestion) {
+        id = selectedSuggestion.profile_id.toString();
+      } else if (suggestions.length > 0) {
+        id = suggestions[0].profile_id.toString();
+      } else {
+        setError('Please select a player from the suggestions');
+        return;
+      }
+    }
     setIsLoading(true);
     setError('');
+    setShowSuggestions(false);
 
     // Simulated API call - replace with actual API endpoint
     try {
@@ -44,6 +110,16 @@ function App() {
     } catch (err) {
       setError('Failed to fetch stats. Please try again.');
       setIsLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('https://<YOUR_WORKER_SUBDOMAIN>.workers.dev');
+      const data = await res.json();
+      console.log('API data:', data);
+    } catch (err) {
+      console.error('Failed to fetch API data', err);
     }
   };
 
@@ -118,19 +194,45 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-8">
-          Age of Empires IV Stats
+          Age of Empires IV Friends Stats
         </h1>
 
-        <form onSubmit={handleSubmit} className="mb-8">
+        <form onSubmit={handleSubmit} className="mb-8" autoComplete="off">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
+              ref={inputRef}
               type="text"
               value={profileId}
-              onChange={(e) => setProfileId(e.target.value)}
-              placeholder="Enter Profile ID"
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+              placeholder="Enter Profile ID or Nickname"
               className="w-full pl-10 pr-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
             />
+            {/* Autocomplete dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="absolute z-10 left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                {suggestions.map((player) => (
+                  <li
+                    key={player.profile_id}
+                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-700"
+                    onMouseDown={() => handleSuggestionClick(player)}
+                  >
+                    <img
+                      src={player.avatars.small.startsWith('http') ? player.avatars.small : `https:${player.avatars.small}`}
+                      alt={player.name}
+                      className="w-6 h-6 rounded-full mr-3"
+                    />
+                    <span className="font-semibold">{player.name}</span>
+                    <span className="ml-2 text-gray-400 text-xs">#{player.profile_id}</span>
+                    {player.country && (
+                      <span className="ml-2 text-xs">{player.country.toUpperCase()}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           {error && <p className="mt-2 text-red-400">{error}</p>}
           <button
@@ -192,6 +294,12 @@ function App() {
             </div>
           </div>
         )}
+        <button
+          onClick={fetchStats}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Fetch API Data
+        </button>
       </div>
     </div>
   );
