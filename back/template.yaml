@@ -7,7 +7,7 @@ Resources:
       Handler: bootstrap            # the name of your executable
       Runtime: provided.al2         # custom AL2 runtime
       CodeUri: .
-      Timeout: 10
+      Timeout: 15
       Events:
         AnalyzeApi:
           Type: Api
