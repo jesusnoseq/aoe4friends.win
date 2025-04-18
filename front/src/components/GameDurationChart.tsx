@@ -45,7 +45,7 @@ const GameDurationChart: React.FC<{ distribution?: DurationDistribution }> = ({ 
               value > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : `${name}: 0%`
             }
           >
-            {data.map((entry, idx) => (
+            {data.map((_, idx) => (
               <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
             ))}
           </Pie>
