@@ -7,7 +7,27 @@ interface GameStats {
   losses: number;
   totalGames: number;
   winRate: number;
-  averageGameLength: string;
+  averageGameLength?: string;
+  civStats: CivStats;
+  allies: AllyOpponent[];
+  opponents: AllyOpponent[];
+}
+
+interface CivStats {
+  [civ: string]: {
+    total: number;
+    wins: number;
+    losses: number;
+  };
+}
+
+interface AllyOpponent {
+  Name: string;
+  Stat: {
+    games: number;
+    wins: number;
+    losses: number;
+  };
 }
 
 interface PlayerSuggestion {
@@ -28,6 +48,77 @@ function App() {
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<PlayerSuggestion | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sorting state for tables
+  const [tableSort, setTableSort] = useState<{
+    table: 'allies' | 'opponents';
+    column: 'name' | 'games' | 'wins' | 'losses' | 'winrate';
+    direction: 'asc' | 'desc';
+  }>({ table: 'allies', column: 'games', direction: 'desc' });
+
+  // Helper for sorting
+  function getSorted(list: AllyOpponent[], column: string, direction: string) {
+    const sorted = [...list].sort((a, b) => {
+      let aVal, bVal;
+      switch (column) {
+        case 'name':
+          aVal = a.Name.toLowerCase();
+          bVal = b.Name.toLowerCase();
+          if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+          return 0;
+        case 'games':
+          aVal = a.Stat.games;
+          bVal = b.Stat.games;
+          break;
+        case 'wins':
+          aVal = a.Stat.wins;
+          bVal = b.Stat.wins;
+          break;
+        case 'losses':
+          aVal = a.Stat.losses;
+          bVal = b.Stat.losses;
+          break;
+        case 'winrate':
+          aVal = a.Stat.games > 0 ? a.Stat.wins / a.Stat.games : 0;
+          bVal = b.Stat.games > 0 ? b.Stat.wins / b.Stat.games : 0;
+          break;
+        default:
+          aVal = 0; bVal = 0;
+      }
+      if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }
+
+  // Table header cell with sort indicator and click handler
+  function SortableTh({
+    label,
+    column,
+    table,
+  }: { label: string; column: any; table: 'allies' | 'opponents' }) {
+    const active = tableSort.table === table && tableSort.column === column;
+    return (
+      <th
+        className="py-2 px-3 cursor-pointer select-none"
+        onClick={() => {
+          setTableSort(prev => {
+            if (prev.table === table && prev.column === column) {
+              return { ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+            }
+            return { table, column, direction: 'desc' };
+          });
+        }}
+      >
+        {label}
+        {active && (
+          <span className="ml-1">{tableSort.direction === 'asc' ? '▲' : '▼'}</span>
+        )}
+      </th>
+    );
+  }
 
   // Helper: check if input is a number (profile id)
   const isProfileId = (value: string) => /^\d+$/.test(value.trim());
@@ -92,34 +183,39 @@ function App() {
     setError('');
     setShowSuggestions(false);
 
-    // Simulated API call - replace with actual API endpoint
     try {
-      // Mock data for demonstration
-      const mockStats: GameStats = {
-        wins: 150,
-        losses: 100,
-        totalGames: 250,
-        winRate: 60,
-        averageGameLength: '25:30',
-      };
-      
-      setTimeout(() => {
-        setStats(mockStats);
-        setIsLoading(false);
-      }, 1000);
+      const res = await fetch(
+        `https://7dek3qyuyj.execute-api.eu-central-1.amazonaws.com/Prod/analyze?profile_id=${id}`
+      );
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+
+      const matchStats = data.MatchStats;
+      const civStats = data.CivStats || {};
+      const allies = data.Allies || [];
+      const opponents = data.Opponents || [];
+
+      if (!matchStats) throw new Error('No stats found');
+
+      const wins = matchStats.wins || 0;
+      const losses = matchStats.losses || 0;
+      const totalGames = matchStats.total || wins + losses;
+      const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+
+      setStats({
+        wins,
+        losses,
+        totalGames,
+        winRate,
+        averageGameLength: '-', // Replace with actual value if available
+        civStats,
+        allies: allies.slice(0, 20),
+        opponents: opponents.slice(0, 20),
+      });
+      setIsLoading(false);
     } catch (err) {
       setError('Failed to fetch stats. Please try again.');
       setIsLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const res = await fetch('https://<YOUR_WORKER_SUBDOMAIN>.workers.dev');
-      const data = await res.json();
-      console.log('API data:', data);
-    } catch (err) {
-      console.error('Failed to fetch API data', err);
     }
   };
 
@@ -158,34 +254,139 @@ function App() {
     );
   };
 
-  const renderGameLengthChart = () => {
-    if (!stats) return null;
-
-    // Mock game length distribution data
-    const data = [
-      { length: '0-15min', games: 45 },
-      { length: '15-30min', games: 120 },
-      { length: '30-45min', games: 65 },
-      { length: '45+min', games: 20 }
-    ];
-
+  // Civ chart
+  const renderCivCharts = () => {
+    if (!stats || !stats.civStats) return null;
+    const civs = Object.entries(stats.civStats);
+    if (civs.length === 0) return null;
     return (
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
-            <XAxis dataKey="length" stroke="#9ca3af" />
-            <YAxis stroke="#9ca3af" />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: '#374151',
-                border: 'none',
-                borderRadius: '0.5rem',
-                color: '#fff'
-              }}
-            />
-            <Bar dataKey="games" fill="#60a5fa" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {civs.map(([civ, stat]) => {
+          const civData = [
+            { name: 'Wins', value: stat.wins },
+            { name: 'Losses', value: stat.losses }
+          ];
+          return (
+            <div key={civ} className="bg-gray-700 rounded-lg p-4 shadow">
+              <h4 className="font-semibold mb-2">{civ.replace(/_/g, ' ').toUpperCase()}</h4>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={civData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={60}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {civData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#4ade80' : '#ef4444'} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="text-sm mt-2">
+                Games: {stat.total} | Win Rate: {stat.total > 0 ? Math.round((stat.wins / stat.total) * 100) : 0}%
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Allies table
+  const renderAlliesTable = () => {
+    const list = stats?.allies || [];
+    const sortedList =
+      tableSort.table === 'allies'
+        ? getSorted(list, tableSort.column, tableSort.direction)
+        : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
+    return (
+      <div className="bg-gray-700 rounded-lg p-4 shadow">
+        <h3 className="text-lg font-semibold mb-4">Top 20 Team Mates</h3>
+        {list.length === 0 ? (
+          <p className="text-gray-400">No team‐mate data available.</p>
+        ) : (
+          <table className="w-full text-left text-sm border-separate border-spacing-y-1">
+            <thead>
+              <tr className="bg-gray-800">
+                <th className="py-2 px-3 rounded-l-lg">#</th>
+                <SortableTh label="Name" column="name" table="allies" />
+                <SortableTh label="Games" column="games" table="allies" />
+                <SortableTh label="Wins" column="wins" table="allies" />
+                <SortableTh label="Losses" column="losses" table="allies" />
+                <SortableTh label="Win Rate" column="winrate" table="allies" />
+              </tr>
+            </thead>
+            <tbody>
+              {sortedList
+                .slice(0, 20)
+                .map((ally, idx) => (
+                  <tr key={ally.Name + idx}
+                      className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}>
+                    <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
+                    <td className="py-2 px-3 break-all">{ally.Name}</td>
+                    <td className="py-2 px-3">{ally.Stat.games}</td>
+                    <td className="py-2 px-3 text-green-400">{ally.Stat.wins}</td>
+                    <td className="py-2 px-3 text-red-400">{ally.Stat.losses}</td>
+                    <td className="py-2 px-3 font-semibold">
+                      {ally.Stat.games > 0 ? Math.round((ally.Stat.wins / ally.Stat.games) * 100) : 0}%
+                    </td>
+                  </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    );
+  };
+
+  // Opponents table
+  const renderOpponentsTable = () => {
+    if (!stats || !stats.opponents || stats.opponents.length === 0) return null;
+    const list = stats.opponents;
+    const sortedList =
+      tableSort.table === 'opponents'
+        ? getSorted(list, tableSort.column, tableSort.direction)
+        : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
+    return (
+      <div className="bg-gray-700 rounded-lg p-4 shadow">
+        <h3 className="text-lg font-semibold mb-4">Top 20 Enemies</h3>
+        <table className="w-full text-left text-sm border-separate border-spacing-y-1">
+          <thead>
+            <tr className="bg-gray-800">
+              <th className="py-2 px-3 rounded-l-lg">#</th>
+              <SortableTh label="Name" column="name" table="opponents" />
+              <SortableTh label="Games" column="games" table="opponents" />
+              <SortableTh label="Wins" column="wins" table="opponents" />
+              <SortableTh label="Losses" column="losses" table="opponents" />
+              <SortableTh label="Win Rate" column="winrate" table="opponents" />
+            </tr>
+          </thead>
+          <tbody>
+            {sortedList
+              .slice(0, 20)
+              .map((op, idx) => (
+                <tr
+                  key={op.Name}
+                  className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}
+                >
+                  <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
+                  <td className="py-2 px-3 break-all">{op.Name}</td>
+                  <td className="py-2 px-3">{op.Stat.games}</td>
+                  <td className="py-2 px-3 text-green-400">{op.Stat.wins}</td>
+                  <td className="py-2 px-3 text-red-400">{op.Stat.losses}</td>
+                  <td className="py-2 px-3 font-semibold">
+                    {op.Stat.games > 0 ? Math.round((op.Stat.wins / op.Stat.games) * 100) : 0}%
+                  </td>
+                </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   };
@@ -246,6 +447,7 @@ function App() {
 
         {stats && (
           <div className="space-y-8">
+            {/* General stats first */}
             <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 <Trophy className="mr-2" /> Player Statistics
@@ -272,34 +474,37 @@ function App() {
                     <p className="text-xl font-semibold">{stats.winRate}%</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
+                {/* <div className="flex items-center space-x-3">
                   <Timer className="text-purple-400" />
                   <div>
                     <p className="text-gray-400">Avg. Game Length</p>
                     <p className="text-xl font-semibold">{stats.averageGameLength}</p>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
+            {/* Top teammates and enemies */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {renderAlliesTable()}
+              {renderOpponentsTable()}
+            </div>
+
+            {/* Civ charts third */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
+              {renderCivCharts()}
+            </div>
+
+            {/* Win/Loss Distribution */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
                 <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
                 {renderWinLossChart()}
               </div>
-              <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
-                <h3 className="text-xl font-semibold mb-4">Game Length Distribution</h3>
-                {renderGameLengthChart()}
-              </div>
             </div>
           </div>
         )}
-        <button
-          onClick={fetchStats}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Fetch API Data
-        </button>
       </div>
     </div>
   );
