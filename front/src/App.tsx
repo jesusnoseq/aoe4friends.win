@@ -7,6 +7,9 @@ import WinLossChart from './components/WinLossChart';
 import { analyzeGames } from './services/aoe4worldAnalysis';
 import { Game, Player } from './services/aoe4worldTypes.request';
 import { fetchGamesWithCache } from './services/aoe4worldRequests';
+import GameDurationChart from './components/GameDurationChart';
+import MapBarChart from './components/MapBarChart';
+import { DurationDistribution } from './services/aoe4worldTypes.analysis';
 
 interface GameStats {
   wins: number;
@@ -22,6 +25,14 @@ interface GameStats {
   longestLossStreak: number;
   winRateLast10Games: number;
   winRateLast50Games: number;
+  durationDistribution?: DurationDistribution;
+  mapStats?: {
+    [map: string]: {
+      games: number;
+      wins: number;
+      losses: number;
+    };
+  };
 }
 
 interface CivStats {
@@ -214,7 +225,6 @@ function App() {
         losses: analyzed.losses,
         totalGames: analyzed.totalGames,
         winRate: analyzed.winRate,
-        averageGameLength: '-',
         civStats: analyzed.civStats,
         allies: analyzed.allies.slice(0, 20),
         opponents: analyzed.opponents.slice(0, 20),
@@ -223,6 +233,9 @@ function App() {
         longestLossStreak: analyzed.longestLossStreak,
         winRateLast10Games: analyzed.winRateLast10,
         winRateLast50Games: analyzed.winRateLast50,
+        averageGameLength: analyzed.averageGameLength,
+        durationDistribution: analyzed.durationDistribution,
+        mapStats: analyzed.mapStats,
       });
 
       const name =
@@ -389,6 +402,25 @@ function App() {
                       <p className="text-xl font-semibold">{stats.currentStreak}</p>
                     </div>
                   </div>
+                  {/* Favourite Civ */}
+                  {(() => {
+                    // Get favorite civ (most games played)
+                    const civEntries = Object.entries(stats.civStats || {});
+                    if (civEntries.length === 0) return null;
+                    const [favCiv, favStats] = civEntries.reduce(
+                      (max, curr) => curr[1].total > max[1].total ? curr : max,
+                      civEntries[0]
+                    );
+                    return (
+                      <div className="flex items-center space-x-3">
+                        <Trophy className="text-orange-400" />
+                        <div>
+                          <p className="text-gray-400">Favourite Civ</p>
+                          <p className="text-xl font-semibold">{favCiv} <span className="text-gray-400 text-base">({favStats.total} games)</span></p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
@@ -412,6 +444,19 @@ function App() {
                       <p className="text-xl font-semibold">{stats.winRateLast50Games}%</p>
                     </div>
                   </div>
+                  <div className="flex items-center space-x-3">
+                    {/* Changed icon for Avg. Game Length */}
+                    <span className="text-yellow-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="text-gray-400">Avg. Game Length</p>
+                      <p className="text-xl font-semibold">{stats.averageGameLength}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -432,11 +477,33 @@ function App() {
               />
             </div>
 
-            {/* Civ charts third */}
+            {/* Civilization Performance */}
             <div>
               <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
               <CivCharts stats={stats} />
             </div>
+
+            {/* New: Game Duration Distribution Section */}
+            {stats.durationDistribution && (
+              <div className="bg-gray-700 rounded-lg p-6 shadow-xl mt-6">
+                <h3 className="text-xl font-semibold mb-2">Game Duration Distribution</h3>
+                <GameDurationChart distribution={{
+                  veryShort: stats.durationDistribution.veryShort ?? 0,
+                  short: stats.durationDistribution.short ?? 0,
+                  medium: stats.durationDistribution.medium ?? 0,
+                  long: stats.durationDistribution.long ?? 0,
+                  veryLong: stats.durationDistribution.veryLong ?? 0,
+                }} />
+              </div>
+            )}
+
+            {/* New: Top Maps Section */}
+            {stats.mapStats && (
+              <div className="bg-gray-700 rounded-lg p-6 shadow-xl mt-6">
+                <h3 className="text-xl font-semibold mb-2">Top Maps</h3>
+                <MapBarChart mapStats={stats.mapStats} />
+              </div>
+            )}
 
             {/* Win/Loss Distribution */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

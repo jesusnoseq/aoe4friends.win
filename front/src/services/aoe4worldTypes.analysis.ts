@@ -28,4 +28,21 @@ export interface AnalyzeGamesResult {
   longestLossStreak: number;
   winRateLast10: number;
   winRateLast50: number;
+  averageGameLength?: string;
+  durationDistribution?: DurationDistribution;
+  mapStats?: {
+    [map: string]: {
+      games: number;
+      wins: number;
+      losses: number;
+    };
+  };
 }
+
+export type DurationDistribution = {
+  veryShort: number;
+  short: number;
+  medium: number;
+  long: number;
+  veryLong: number;
+};

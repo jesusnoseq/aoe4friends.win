@@ -41,8 +41,8 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
             <th className="py-2 px-3 rounded-l-lg">#</th>
             <SortableTh label="Name" column="name" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
             <SortableTh label="Games" column="games" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
-            <SortableTh label="Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
-            <SortableTh label="Losses" column="losses" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
+            <SortableTh label="Your Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
+            <SortableTh label="Your Losses" column="losses" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
             <SortableTh label="Win Rate" column="winrate" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
           </tr>
         </thead>
@@ -57,10 +57,13 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
                 <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
                 <td className="py-2 px-3 break-all">{op.Name}</td>
                 <td className="py-2 px-3">{op.Stat.games}</td>
-                <td className="py-2 px-3 text-green-400">{op.Stat.wins}</td>
-                <td className="py-2 px-3 text-red-400">{op.Stat.losses}</td>
+                {/* Show your wins (opponent's losses) */}
+                <td className="py-2 px-3 text-green-400">{op.Stat.losses}</td>
+                {/* Show your losses (opponent's wins) */}
+                <td className="py-2 px-3 text-red-400">{op.Stat.wins}</td>
                 <td className="py-2 px-3 font-semibold">
-                  {op.Stat.games > 0 ? Math.round((op.Stat.wins / op.Stat.games) * 100) : 0}%
+                  {/* Win rate: your wins / total games */}
+                  {op.Stat.games > 0 ? Math.round((op.Stat.losses / op.Stat.games) * 100) : 0}%
                 </td>
               </tr>
           ))}
