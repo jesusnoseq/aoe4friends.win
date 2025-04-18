@@ -1,6 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { Search, Trophy, Swords, Users2, Timer } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Trophy, Swords, Users2 } from 'lucide-react';
+import AlliesTable from './components/AlliesTable';
+import OpponentsTable from './components/OpponentsTable';
+import CivCharts from './components/CivCharts';
+import WinLossChart from './components/WinLossChart';
 
 interface GameStats {
   wins: number;
@@ -48,6 +51,26 @@ function App() {
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<PlayerSuggestion | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
+  const [showRecent, setShowRecent] = useState<boolean>(false);
+
+  // Load recent queries from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('aoe4friends_recent_queries');
+    if (stored) {
+      setRecentQueries(JSON.parse(stored));
+    }
+  }, []);
+
+  // Helper to add to recent queries and persist
+  function addRecentQuery(name: string, profile_id: number) {
+    setRecentQueries(prev => {
+      const filtered = prev.filter(q => q.profile_id !== profile_id);
+      const updated = [{ name, profile_id }, ...filtered].slice(0, 10);
+      localStorage.setItem('aoe4friends_recent_queries', JSON.stringify(updated));
+      return updated;
+    });
+  }
 
   // Sorting state for tables
   const [tableSort, setTableSort] = useState<{
@@ -93,33 +116,6 @@ function App() {
     return sorted;
   }
 
-  // Table header cell with sort indicator and click handler
-  function SortableTh({
-    label,
-    column,
-    table,
-  }: { label: string; column: any; table: 'allies' | 'opponents' }) {
-    const active = tableSort.table === table && tableSort.column === column;
-    return (
-      <th
-        className="py-2 px-3 cursor-pointer select-none"
-        onClick={() => {
-          setTableSort(prev => {
-            if (prev.table === table && prev.column === column) {
-              return { ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
-            }
-            return { table, column, direction: 'desc' };
-          });
-        }}
-      >
-        {label}
-        {active && (
-          <span className="ml-1">{tableSort.direction === 'asc' ? '▲' : '▼'}</span>
-        )}
-      </th>
-    );
-  }
-
   // Helper: check if input is a number (profile id)
   const isProfileId = (value: string) => /^\d+$/.test(value.trim());
 
@@ -156,6 +152,26 @@ function App() {
     setError('');
     // Optionally, focus input out
     inputRef.current?.blur();
+  };
+
+  // Handle recent query selection
+  const handleRecentClick = (query: { name: string; profile_id: number }) => {
+    setProfileId(query.profile_id.toString());
+    setSelectedSuggestion({
+      name: query.name,
+      profile_id: query.profile_id,
+      avatars: { small: '', medium: '', full: '' }
+    });
+    setShowRecent(false);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setError('');
+    // Optionally, trigger fetch immediately:
+    setTimeout(() => {
+      inputRef.current?.blur();
+      // Simulate form submit
+      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+    }, 0);
   };
 
   // Hide suggestions on blur (with delay for click)
@@ -212,6 +228,18 @@ function App() {
         allies: allies.slice(0, 20),
         opponents: opponents.slice(0, 20),
       });
+
+      // Save to recent queries
+      let name = '';
+      if (selectedSuggestion) {
+        name = selectedSuggestion.name;
+      } else if (suggestions.length > 0) {
+        name = suggestions[0].name;
+      } else {
+        name = id;
+      }
+      addRecentQuery(name, Number(id));
+
       setIsLoading(false);
     } catch (err) {
       setError('Failed to fetch stats. Please try again.');
@@ -219,181 +247,9 @@ function App() {
     }
   };
 
-  const COLORS = ['#4ade80', '#ef4444'];
-
-  const renderWinLossChart = () => {
-    if (!stats) return null;
-
-    const data = [
-      { name: 'Wins', value: stats.wins },
-      { name: 'Losses', value: stats.losses }
-    ];
-
-    return (
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              fill="#8884d8"
-              paddingAngle={5}
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    );
-  };
-
-  // Civ chart
-  const renderCivCharts = () => {
-    if (!stats || !stats.civStats) return null;
-    const civs = Object.entries(stats.civStats);
-    if (civs.length === 0) return null;
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {civs.map(([civ, stat]) => {
-          const civData = [
-            { name: 'Wins', value: stat.wins },
-            { name: 'Losses', value: stat.losses }
-          ];
-          return (
-            <div key={civ} className="bg-gray-700 rounded-lg p-4 shadow">
-              <h4 className="font-semibold mb-2">{civ.replace(/_/g, ' ').toUpperCase()}</h4>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={civData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={60}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {civData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index === 0 ? '#4ade80' : '#ef4444'} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="text-sm mt-2">
-                Games: {stat.total} | Win Rate: {stat.total > 0 ? Math.round((stat.wins / stat.total) * 100) : 0}%
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  // Allies table
-  const renderAlliesTable = () => {
-    const list = stats?.allies || [];
-    const sortedList =
-      tableSort.table === 'allies'
-        ? getSorted(list, tableSort.column, tableSort.direction)
-        : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
-    return (
-      <div className="bg-gray-700 rounded-lg p-4 shadow">
-        <h3 className="text-lg font-semibold mb-4">Top 20 Team Mates</h3>
-        {list.length === 0 ? (
-          <p className="text-gray-400">No team‐mate data available.</p>
-        ) : (
-          <table className="w-full text-left text-sm border-separate border-spacing-y-1">
-            <thead>
-              <tr className="bg-gray-800">
-                <th className="py-2 px-3 rounded-l-lg">#</th>
-                <SortableTh label="Name" column="name" table="allies" />
-                <SortableTh label="Games" column="games" table="allies" />
-                <SortableTh label="Wins" column="wins" table="allies" />
-                <SortableTh label="Losses" column="losses" table="allies" />
-                <SortableTh label="Win Rate" column="winrate" table="allies" />
-              </tr>
-            </thead>
-            <tbody>
-              {sortedList
-                .slice(0, 20)
-                .map((ally, idx) => (
-                  <tr key={ally.Name + idx}
-                      className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}>
-                    <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
-                    <td className="py-2 px-3 break-all">{ally.Name}</td>
-                    <td className="py-2 px-3">{ally.Stat.games}</td>
-                    <td className="py-2 px-3 text-green-400">{ally.Stat.wins}</td>
-                    <td className="py-2 px-3 text-red-400">{ally.Stat.losses}</td>
-                    <td className="py-2 px-3 font-semibold">
-                      {ally.Stat.games > 0 ? Math.round((ally.Stat.wins / ally.Stat.games) * 100) : 0}%
-                    </td>
-                  </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    );
-  };
-
-  // Opponents table
-  const renderOpponentsTable = () => {
-    if (!stats || !stats.opponents || stats.opponents.length === 0) return null;
-    const list = stats.opponents;
-    const sortedList =
-      tableSort.table === 'opponents'
-        ? getSorted(list, tableSort.column, tableSort.direction)
-        : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
-    return (
-      <div className="bg-gray-700 rounded-lg p-4 shadow">
-        <h3 className="text-lg font-semibold mb-4">Top 20 Enemies</h3>
-        <table className="w-full text-left text-sm border-separate border-spacing-y-1">
-          <thead>
-            <tr className="bg-gray-800">
-              <th className="py-2 px-3 rounded-l-lg">#</th>
-              <SortableTh label="Name" column="name" table="opponents" />
-              <SortableTh label="Games" column="games" table="opponents" />
-              <SortableTh label="Wins" column="wins" table="opponents" />
-              <SortableTh label="Losses" column="losses" table="opponents" />
-              <SortableTh label="Win Rate" column="winrate" table="opponents" />
-            </tr>
-          </thead>
-          <tbody>
-            {sortedList
-              .slice(0, 20)
-              .map((op, idx) => (
-                <tr
-                  key={op.Name}
-                  className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}
-                >
-                  <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
-                  <td className="py-2 px-3 break-all">{op.Name}</td>
-                  <td className="py-2 px-3">{op.Stat.games}</td>
-                  <td className="py-2 px-3 text-green-400">{op.Stat.wins}</td>
-                  <td className="py-2 px-3 text-red-400">{op.Stat.losses}</td>
-                  <td className="py-2 px-3 font-semibold">
-                    {op.Stat.games > 0 ? Math.round((op.Stat.wins / op.Stat.games) * 100) : 0}%
-                  </td>
-                </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-8">
           Age of Empires IV Friends Stats
         </h1>
@@ -407,10 +263,36 @@ function App() {
               value={profileId}
               onChange={handleInputChange}
               onBlur={handleInputBlur}
-              onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+              onFocus={() => { 
+                if (suggestions.length > 0) setShowSuggestions(true); 
+              }}
               placeholder="Enter Profile ID or Nickname"
-              className="w-full pl-10 pr-4 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+              className="w-full pl-10 pr-16 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
             />
+            {/* Recent queries button */}
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-600 hover:bg-gray-500 text-xs px-2 py-1 rounded"
+              onClick={() => setShowRecent(v => !v)}
+              tabIndex={-1}
+            >
+              Recent
+            </button>
+            {/* Recent queries dropdown */}
+            {showRecent && recentQueries.length > 0 && (
+              <ul className="absolute z-20 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto w-64">
+                {recentQueries.map((q) => (
+                  <li
+                    key={q.profile_id}
+                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-700"
+                    onMouseDown={() => handleRecentClick(q)}
+                  >
+                    <span className="font-semibold">{q.name}</span>
+                    <span className="ml-2 text-gray-400 text-xs">#{q.profile_id}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             {/* Autocomplete dropdown */}
             {showSuggestions && suggestions.length > 0 && (
               <ul className="absolute z-10 left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -486,21 +368,31 @@ function App() {
 
             {/* Top teammates and enemies */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {renderAlliesTable()}
-              {renderOpponentsTable()}
+              <AlliesTable
+                stats={stats}
+                tableSort={tableSort}
+                setTableSort={setTableSort}
+                getSorted={getSorted}
+              />
+              <OpponentsTable
+                stats={stats}
+                tableSort={tableSort}
+                setTableSort={setTableSort}
+                getSorted={getSorted}
+              />
             </div>
 
             {/* Civ charts third */}
             <div>
               <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
-              {renderCivCharts()}
+              <CivCharts stats={stats} />
             </div>
 
             {/* Win/Loss Distribution */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
                 <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
-                {renderWinLossChart()}
+                <WinLossChart stats={stats} />
               </div>
             </div>
           </div>
