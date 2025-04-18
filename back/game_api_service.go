@@ -5,11 +5,26 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 )
 
 type GameApiService struct{}
 
+// In-memory cache for games by profileID
+var (
+	gameCache      = make(map[int][]Game)
+	gameCacheMutex sync.RWMutex
+)
+
 func (g *GameApiService) FetchGames(profileID int, since string, untilGameID string) ([]Game, error) {
+	// Check cache first
+	gameCacheMutex.RLock()
+	cachedGames, found := gameCache[profileID]
+	gameCacheMutex.RUnlock()
+	if found {
+		return cachedGames, nil
+	}
+
 	apiURL := fmt.Sprintf("https://aoe4world.com/api/v0/players/%d/games", profileID)
 	allGames := []Game{}
 	page := 1
@@ -69,6 +84,9 @@ func (g *GameApiService) FetchGames(profileID int, since string, untilGameID str
 		}
 		page++
 	}
+	gameCacheMutex.Lock()
+	gameCache[profileID] = allGames
+	gameCacheMutex.Unlock()
 
 	return allGames, nil
 }

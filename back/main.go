@@ -50,8 +50,12 @@ func analyzeLambdaHandler(ctx context.Context, request events.APIGatewayProxyReq
 	}
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Headers:    map[string]string{"Content-Type": "application/json"},
-		Body:       string(respBody),
+		Headers: map[string]string{
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET,OPTIONS",
+		},
+		Body: string(respBody),
 	}, nil
 }
 
