@@ -4,7 +4,9 @@ import AlliesTable from './components/AlliesTable';
 import OpponentsTable from './components/OpponentsTable';
 import CivCharts from './components/CivCharts';
 import WinLossChart from './components/WinLossChart';
-import { fetchGamesWithCache, analyzeGames, Game, Player } from './services/aoe4worldService';
+import { analyzeGames } from './services/aoe4worldAnalysis';
+import { Game, Player } from './services/aoe4worldTypes.request';
+import { fetchGamesWithCache } from './services/aoe4worldRequests';
 
 interface GameStats {
   wins: number;

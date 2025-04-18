@@ -1,81 +1,8 @@
-export interface Player {
-  profile_id: number;
-  name: string;
-  civilization: string;
-  result: string;
-}
+import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, NameStatPair } from './aoe4worldTypes.analysis';
+import { Game, Player } from './aoe4worldTypes.request';
 
-export interface TeamMember {
-  player: Player;
-}
-
-export interface Game {
-  id: string;
-  started_at: string;
-  teams: TeamMember[][];
-}
-
-export interface CivStat {
-  total: number;
-  wins: number;
-  losses: number;
-}
-
-export interface AllyOpponentStat {
-  games: number;
-  wins: number;
-  losses: number;
-}
-
-export interface NameStatPair {
-  Name: string;
-  Stat: AllyOpponentStat;
-}
-
-export interface AnalyzeGamesResult {
-  wins: number;
-  losses: number;
-  totalGames: number;
-  winRate: number;
-  civStats: { [civ: string]: CivStat };
-  allies: NameStatPair[];
-  opponents: NameStatPair[];
-  currentStreak: number;
-  longestWinStreak: number;
-  longestLossStreak: number;
-  winRateLast10: number;
-  winRateLast50: number;
-}
-
-// Fetch all games for a profile_id, with paging, and cache in localStorage
-export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
-  const cacheKey = `aoe4friends_games_${profileId}`;
-  const cached = localStorage.getItem(cacheKey);
-  if (cached) {
-    try {
-      return JSON.parse(cached);
-    } catch {}
-  }
-  let allGames: Game[] = [];
-  let page = 1;
-  while (true) {
-    const url = `https://aoe4world.com/api/v0/players/${profileId}/games?page=${page}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('Failed to fetch games');
-    const data = await resp.json();
-    if (!data.games || data.games.length === 0) break;
-    allGames = allGames.concat(data.games);
-
-    if (data.total_count <= (data.page*data.per_page)) break;
-
-    page++;
-  }
-  localStorage.setItem(cacheKey, JSON.stringify(allGames));
-  return allGames;
-}
-
-// Analyze games (ported from Go logic)
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
+  // ...existing code from analyzeGames...
   const opponents: { [name: string]: AllyOpponentStat } = {};
   const allies: { [name: string]: AllyOpponentStat } = {};
   const civStats: { [civ: string]: CivStat } = {};
