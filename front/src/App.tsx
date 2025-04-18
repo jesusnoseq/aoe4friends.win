@@ -15,6 +15,11 @@ interface GameStats {
   civStats: CivStats;
   allies: AllyOpponent[];
   opponents: AllyOpponent[];
+  currentStreak: number;
+  longestWinStreak: number;
+  longestLossStreak: number;
+  winRateLast10Games: number;
+  winRateLast50Games: number;
 }
 
 interface CivStats {
@@ -210,6 +215,11 @@ function App() {
         civStats: analyzed.civStats,
         allies: analyzed.allies.slice(0, 20),
         opponents: analyzed.opponents.slice(0, 20),
+        currentStreak: analyzed.currentStreak,
+        longestWinStreak: analyzed.longestWinStreak,
+        longestLossStreak: analyzed.longestLossStreak,
+        winRateLast10Games: analyzed.winRateLast10,
+        winRateLast50Games: analyzed.winRateLast50,
       });
 
       const name =
@@ -353,34 +363,52 @@ function App() {
                 <Trophy className="mr-2" /> Player Statistics
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-center space-x-3">
-                  <Swords className="text-blue-400" />
-                  <div>
-                    <p className="text-gray-400">Win/Loss</p>
-                    <p className="text-xl font-semibold">{stats.wins}W - {stats.losses}L</p>
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Swords className="text-blue-400" />
+                    <div>
+                      <p className="text-gray-400">Win/Loss</p>
+                      <p className="text-xl font-semibold">{stats.wins}W - {stats.losses}L</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Users2 className="text-green-400" />
+                    <div>
+                      <p className="text-gray-400">Total Games</p>
+                      <p className="text-xl font-semibold">{stats.totalGames}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Swords className="text-purple-400" />
+                    <div>
+                      <p className="text-gray-400">Current Win Streak</p>
+                      <p className="text-xl font-semibold">{stats.currentStreak}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Users2 className="text-green-400" />
-                  <div>
-                    <p className="text-gray-400">Total Games</p>
-                    <p className="text-xl font-semibold">{stats.totalGames}</p>
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Trophy className="text-yellow-400" />
+                    <div>
+                      <p className="text-gray-400">Win Rate</p>
+                      <p className="text-xl font-semibold">{stats.winRate}%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Trophy className="text-pink-400" />
+                    <div>
+                      <p className="text-gray-400">Win Rate (Last 10)</p>
+                      <p className="text-xl font-semibold">{stats.winRateLast10Games}%</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Trophy className="text-indigo-400" />
+                    <div>
+                      <p className="text-gray-400">Win Rate (Last 50)</p>
+                      <p className="text-xl font-semibold">{stats.winRateLast50Games}%</p>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Trophy className="text-yellow-400" />
-                  <div>
-                    <p className="text-gray-400">Win Rate</p>
-                    <p className="text-xl font-semibold">{stats.winRate}%</p>
-                  </div>
-                </div>
-                {/* <div className="flex items-center space-x-3">
-                  <Timer className="text-purple-400" />
-                  <div>
-                    <p className="text-gray-400">Avg. Game Length</p>
-                    <p className="text-xl font-semibold">{stats.averageGameLength}</p>
-                  </div>
-                </div> */}
               </div>
             </div>
 

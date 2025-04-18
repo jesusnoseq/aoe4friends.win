@@ -40,6 +40,11 @@ export interface AnalyzeGamesResult {
   civStats: { [civ: string]: CivStat };
   allies: NameStatPair[];
   opponents: NameStatPair[];
+  currentStreak: number;
+  longestWinStreak: number;
+  longestLossStreak: number;
+  winRateLast10: number;
+  winRateLast50: number;
 }
 
 // Fetch all games for a profile_id, with paging, and cache in localStorage
@@ -75,6 +80,9 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
   const allies: { [name: string]: AllyOpponentStat } = {};
   const civStats: { [civ: string]: CivStat } = {};
   let wins = 0, losses = 0, totalGames = 0;
+
+  // collect per‐game outcomes for streaks & recent rates
+  const gameResults: { started_at: string; won: boolean }[] = [];
 
   for (const game of games) {
     let playerInfo: Player | null = null;
@@ -118,7 +126,46 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
         }
       }
     }
+
+    gameResults.push({ started_at: game.started_at, won: playerWon });
   }
+
+  // after all games processed, compute streaks & recent rates
+  const sortedByDate = gameResults
+    .slice()
+    .sort((a, b) => new Date(a.started_at).getTime() - new Date(b.started_at).getTime());
+
+  // current win‐streak (from latest backwards)
+  let currentStreak = 0;
+  for (let i = sortedByDate.length - 1; i >= 0; i--) {
+    if (sortedByDate[i].won) currentStreak++;
+    else break;
+  }
+
+  // longest win & loss streaks
+  let longestWinStreak = 0, longestLossStreak = 0;
+  let tempWin = 0, tempLoss = 0;
+  for (const g of sortedByDate) {
+    if (g.won) {
+      tempWin++;
+      longestWinStreak = Math.max(longestWinStreak, tempWin);
+      tempLoss = 0;
+    } else {
+      tempLoss++;
+      longestLossStreak = Math.max(longestLossStreak, tempLoss);
+      tempWin = 0;
+    }
+  }
+
+  // helper for last‑N win‐rate
+  const calcRecent = (n: number) => {
+    const slice = sortedByDate.slice(-n);
+    const w = slice.filter((g) => g.won).length;
+    return slice.length > 0 ? Math.round((w / slice.length) * 100) : 0;
+  };
+
+  const winRateLast10 = calcRecent(10);
+  const winRateLast50 = calcRecent(50);
 
   // Sort civStats by total desc
   const sortedCivStats: { [civ: string]: CivStat } = {};
@@ -144,5 +191,10 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
     civStats: sortedCivStats,
     allies: sortedAllies,
     opponents: sortedOpponents,
+    currentStreak,
+    longestWinStreak,
+    longestLossStreak,
+    winRateLast10,
+    winRateLast50,
   };
 }
