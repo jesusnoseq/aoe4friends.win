@@ -1,0 +1,5 @@
+data/*.json
+.aws-sam/
+secret**
+back
+bootstrap**

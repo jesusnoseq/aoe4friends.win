@@ -18,10 +18,9 @@ type TeamMember struct {
 }
 
 type CivStat struct {
-	Total   int     `json:"total"`
-	Wins    int     `json:"wins"`
-	Losses  int     `json:"losses"`
-	WinRate float64 `json:"win_rate"`
+	Total  int `json:"total"`
+	Wins   int `json:"wins"`
+	Losses int `json:"losses"`
 }
 
 type AllyOpponentStat struct {

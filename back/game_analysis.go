@@ -51,7 +51,6 @@ func AnalyzeGames(games []Game, profileID int) AnalyzeGamesResult {
 		} else {
 			civStats[pciv].Losses++
 		}
-		civStats[pciv].WinRate = float64(civStats[pciv].Wins) / float64(civStats[pciv].Total) * 100.0
 
 		// Process other players
 		for tIdx, team := range game.Teams {

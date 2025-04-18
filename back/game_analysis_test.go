@@ -47,7 +47,7 @@ func TestAnalyzeGamesBasic(t *testing.T) {
 	if !ok {
 		t.Fatalf("Britons not in civ_stats")
 	}
-	if britons.Total != 2 || britons.Wins != 1 || britons.Losses != 1 || britons.WinRate != 50.0 {
+	if britons.Total != 2 || britons.Wins != 1 || britons.Losses != 1 {
 		t.Errorf("unexpected britons stats: %+v", britons)
 	}
 
