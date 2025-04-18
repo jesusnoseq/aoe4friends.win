@@ -4,6 +4,7 @@ import AlliesTable from './components/AlliesTable';
 import OpponentsTable from './components/OpponentsTable';
 import CivCharts from './components/CivCharts';
 import WinLossChart from './components/WinLossChart';
+import { fetchGamesWithCache, analyzeGames, Game, Player } from './services/aoe4worldService';
 
 interface GameStats {
   wins: number;
@@ -166,90 +167,101 @@ function App() {
     setSuggestions([]);
     setShowSuggestions(false);
     setError('');
-    // Optionally, trigger fetch immediately:
-    setTimeout(() => {
-      inputRef.current?.blur();
-      // Simulate form submit
-      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
-    }, 0);
+    loadStats(query.profile_id, query.name);
   };
 
   // Hide suggestions on blur (with delay for click)
   const handleInputBlur = () => setTimeout(() => setShowSuggestions(false), 100);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    let id = profileId.trim();
-    if (!id) {
-      setError('Please enter a profile ID or nickname');
-      return;
-    }
-    // If not a number and a suggestion is selected, use its profile_id
-    if (!isProfileId(id)) {
-      if (selectedSuggestion) {
-        id = selectedSuggestion.profile_id.toString();
-      } else if (suggestions.length > 0) {
-        id = suggestions[0].profile_id.toString();
-      } else {
-        setError('Please select a player from the suggestions');
-        return;
+  // Helper: extract nickname from the first game for a given profile id
+  function getNicknameFromGames(games: Game[], profileId: number): string | undefined {
+    if (games.length > 0 && Array.isArray(games[0].teams)) {
+      // Combine all players from both teams into a single array
+      const players: { player: Player }[] = [
+        ...(Array.isArray(games[0].teams[0]) ? games[0].teams[0] : []),
+        ...(Array.isArray(games[0].teams[1]) ? games[0].teams[1] : [])
+      ];
+      const player = players.find((p: { player: Player }) => {
+        return p.player.profile_id == profileId;
+      });
+      if (player) {
+        return player.player.name;
       }
     }
+    return undefined;
+  }
+
+  // New: shared loader
+  async function loadStats(id: number, forcedName?: string) {
     setIsLoading(true);
     setError('');
     setShowSuggestions(false);
 
     try {
-      const res = await fetch(
-        `https://7dek3qyuyj.execute-api.eu-central-1.amazonaws.com/Prod/analyze?profile_id=${id}`
-      );
-      if (!res.ok) throw new Error('API error');
-      const data = await res.json();
-
-      const matchStats = data.MatchStats;
-      const civStats = data.CivStats || {};
-      const allies = data.Allies || [];
-      const opponents = data.Opponents || [];
-
-      if (!matchStats) throw new Error('No stats found');
-
-      const wins = matchStats.wins || 0;
-      const losses = matchStats.losses || 0;
-      const totalGames = matchStats.total || wins + losses;
-      const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+      const games = await fetchGamesWithCache(id);
+      const analyzed = analyzeGames(games, id);
 
       setStats({
-        wins,
-        losses,
-        totalGames,
-        winRate,
-        averageGameLength: '-', // Replace with actual value if available
-        civStats,
-        allies: allies.slice(0, 20),
-        opponents: opponents.slice(0, 20),
+        wins: analyzed.wins,
+        losses: analyzed.losses,
+        totalGames: analyzed.totalGames,
+        winRate: analyzed.winRate,
+        averageGameLength: '-',
+        civStats: analyzed.civStats,
+        allies: analyzed.allies.slice(0, 20),
+        opponents: analyzed.opponents.slice(0, 20),
       });
 
-      // Save to recent queries
-      let name = '';
-      if (selectedSuggestion) {
-        name = selectedSuggestion.name;
-      } else if (suggestions.length > 0) {
-        name = suggestions[0].name;
-      } else {
-        name = id;
-      }
-      addRecentQuery(name, Number(id));
+      const name =
+        forcedName ||
+        selectedSuggestion?.name ||
+        suggestions[0]?.name ||
+        getNicknameFromGames(games, id) ||
+        id.toString();
 
-      setIsLoading(false);
-    } catch (err) {
+      addRecentQuery(name, id);
+    } catch {
       setError('Failed to fetch stats. Please try again.');
+    } finally {
       setIsLoading(false);
     }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const raw = profileId.trim();
+    if (!raw) {
+      setError('Please enter a profile ID or nickname');
+      return;
+    }
+
+    let idNum: number;
+    if (/^\d+$/.test(raw)) {
+      idNum = Number(raw);
+    } else if (selectedSuggestion) {
+      idNum = selectedSuggestion.profile_id;
+    } else if (suggestions.length) {
+      idNum = suggestions[0].profile_id;
+    } else {
+      setError('Please select a player from the suggestions');
+      return;
+    }
+
+    loadStats(idNum);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8 flex flex-col min-h-screen">
+      {/* Loading spinner overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <svg className="animate-spin h-16 w-16 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </div>
+      )}
+      <div className="max-w-6xl mx-auto flex-1">
         <h1 className="text-4xl font-bold text-center mb-8">
           Age of Empires IV Friends Stats
         </h1>
@@ -273,7 +285,13 @@ function App() {
             <button
               type="button"
               className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-600 hover:bg-gray-500 text-xs px-2 py-1 rounded"
-              onClick={() => setShowRecent(v => !v)}
+              onClick={() => {
+                setShowRecent(prev => {
+                  const next = !prev;
+                  if (next) setShowSuggestions(false);
+                  return next;
+                });
+              }}
               tabIndex={-1}
             >
               Recent
@@ -398,8 +416,42 @@ function App() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
 
 export default App;
+
+// --- Add footer below the main export ---
+/*
+  Footer: Thank aoe4world.com and credit jesusnoseq
+*/
+function Footer() {
+  return (
+    <footer className="mt-16 text-center text-gray-400 text-sm">
+      <div>
+        Data powered by{' '}
+        <a
+          href="https://aoe4world.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-blue-300"
+        >
+          aoe4world.com
+        </a>
+        .<br />
+        Made by{' '}
+        <a
+          href="https://jesusnoseq.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-blue-300"
+        >
+          jesusnoseq
+        </a>
+        .
+      </div>
+    </footer>
+  );
+}
