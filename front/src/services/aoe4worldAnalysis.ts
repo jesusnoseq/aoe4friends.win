@@ -1,4 +1,4 @@
-import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, NameStatPair } from './aoe4worldTypes.analysis';
+import {  AnalyzeGamesResult, CivStat, AllyOpponentStat } from './aoe4worldTypes.analysis';
 import { Game, Player } from './aoe4worldTypes.request';
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
@@ -9,7 +9,7 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
   let wins = 0, losses = 0, totalGames = 0;
 
   // collect per‐game outcomes for streaks & recent rates
-  const gameResults: { started_at: string; won: boolean }[] = [];
+  const gameResults: { started_at: Date; won: boolean }[] = [];
 
   for (const game of games) {
     let playerInfo: Player | null = null;

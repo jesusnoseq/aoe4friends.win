@@ -61,6 +61,7 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
   const [showRecent, setShowRecent] = useState<boolean>(false);
+  const [currentNickname, setCurrentNickname] = useState<string>('');
 
   // Load recent queries from localStorage on mount
   useEffect(() => {
@@ -231,6 +232,7 @@ function App() {
         getNicknameFromGames(games, id) ||
         id.toString();
 
+      setCurrentNickname(name); // <-- Set nickname for display
       addRecentQuery(name, id);
     } catch {
       setError('Failed to fetch stats. Please try again.');
@@ -362,7 +364,7 @@ function App() {
             {/* General stats first */}
             <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
-                <Trophy className="mr-2" /> Player Statistics
+                <Trophy className="mr-2" /> Player Statistics - {currentNickname}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col space-y-3">
