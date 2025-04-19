@@ -6,10 +6,36 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
   const cacheKey = `aoe4friends_games_${profileId}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
-    try {
-      return JSON.parse(LZString.decompress(cached) || "[]");
-    } catch {}
+    const cachedGames: Game[] = JSON.parse(LZString.decompress(cached) || "[]");
+    const cachedIds = new Set(cachedGames.map(g => g.game_id));
+    const newGames: Game[] = [];
+    let page = 1;
+
+    outer: while (true) {
+      const url = `https://aoe4world.com/api/v0/players/${profileId}/games?page=${page}`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('Failed to fetch games');
+      const data = await resp.json();
+      if (!data.games?.length) break;
+
+      for (const game of data.games) {
+        if (cachedIds.has(game.game_id)) {
+          break outer;
+        }
+        newGames.push(game);
+      }
+      if (data.total_count <= data.page * data.per_page) break;
+      page++;
+    }
+
+    if (newGames.length) {
+      const updated = newGames.concat(cachedGames);
+      localStorage.setItem(cacheKey, LZString.compress(JSON.stringify(updated)));
+      return updated;
+    }
+    return cachedGames;
   }
+
   let allGames: Game[] = [];
   let page = 1;
   while (true) {
