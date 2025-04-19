@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { Search, Trophy, Swords, Users2 } from 'lucide-react';
 import AlliesTable from './components/AlliesTable';
 import OpponentsTable from './components/OpponentsTable';
@@ -64,6 +65,17 @@ interface PlayerSuggestion {
 }
 
 function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/:profileIdParam?" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+// --- MainApp contains the previous App logic ---
+function MainApp() {
   const [profileId, setProfileId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [stats, setStats] = useState<GameStats | null>(null);
@@ -75,6 +87,8 @@ function App() {
   const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
   const [showRecent, setShowRecent] = useState<boolean>(false);
   const [currentNickname, setCurrentNickname] = useState<string>('');
+  const navigate = useNavigate();
+  const { profileIdParam } = useParams();
 
   // Load recent queries from localStorage on mount
   useEffect(() => {
@@ -83,6 +97,19 @@ function App() {
       setRecentQueries(JSON.parse(stored));
     }
   }, []);
+
+  // On mount or when profileIdParam changes, load stats if present
+  useEffect(() => {
+    if (profileIdParam && /^\d+$/.test(profileIdParam)) {
+      setProfileId(profileIdParam);
+      setSelectedSuggestion(null);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setError('');
+      loadStats(Number(profileIdParam));
+    }
+    // eslint-disable-next-line
+  }, [profileIdParam]);
 
   // Helper to add to recent queries and persist
   function addRecentQuery(name: string, profile_id: number) {
@@ -251,6 +278,11 @@ function App() {
 
       setCurrentNickname(name);
       addRecentQuery(name, id);
+
+      // Update URL if not already there
+      if (profileIdParam !== String(id)) {
+        navigate(`/${id}`, { replace: false });
+      }
     } catch (err){
       console.error('Failed to fetch stats', err);
       setError('Failed to fetch stats. Please try again.');
