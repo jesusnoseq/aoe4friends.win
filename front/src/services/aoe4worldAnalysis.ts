@@ -13,6 +13,8 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
   // Changed: five buckets instead of three
   const durationBuckets: DurationDistribution = { veryShort: 0, short: 0, medium: 0, long: 0, veryLong: 0 };
   const mapStats: { [map: string]: { games: number; wins: number; losses: number } } = {};
+  // Track the longest game duration (in seconds)
+  let longestGame = 0;
 
   // collect per‐game outcomes for streaks & recent rates
   const gameResults: { started_at: Date; won: boolean; duration: number; map: string }[] = [];
@@ -70,6 +72,8 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
       else if (game.duration < 30 * 60) durationBuckets.medium++;
       else if (game.duration < 40 * 60) durationBuckets.long++;
       else durationBuckets.veryLong++;
+      // Track longest game
+      if (game.duration > longestGame) longestGame = game.duration;
     }
 
     // Map stats
@@ -96,10 +100,13 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
   // longest win & loss streaks
   let longestWinStreak = 0, longestLossStreak = 0;
   let tempWin = 0, tempLoss = 0;
+  // Track max win streak (could be same as longestWinStreak, but explicit for clarity)
+  let maxWinStreak = 0;
   for (const g of sortedByDate) {
     if (g.won) {
       tempWin++;
       longestWinStreak = Math.max(longestWinStreak, tempWin);
+      maxWinStreak = Math.max(maxWinStreak, tempWin);
       tempLoss = 0;
     } else {
       tempLoss++;
@@ -159,5 +166,7 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
     averageGameLength,
     durationDistribution: { ...durationBuckets },
     mapStats,
+    maxWinStreak,
+    longestGame,
   };
 }

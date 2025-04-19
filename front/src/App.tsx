@@ -21,6 +21,7 @@ interface GameStats {
   allies: AllyOpponent[];
   opponents: AllyOpponent[];
   currentStreak: number;
+  maxWinStreak: number;
   longestWinStreak: number;
   longestLossStreak: number;
   winRateLast10Games: number;
@@ -33,6 +34,7 @@ interface GameStats {
       losses: number;
     };
   };
+  longestGame?: number;
 }
 
 interface CivStats {
@@ -229,6 +231,7 @@ function App() {
         allies: analyzed.allies.slice(0, 20),
         opponents: analyzed.opponents.slice(0, 20),
         currentStreak: analyzed.currentStreak,
+        maxWinStreak: analyzed.maxWinStreak || analyzed.longestWinStreak,
         longestWinStreak: analyzed.longestWinStreak,
         longestLossStreak: analyzed.longestLossStreak,
         winRateLast10Games: analyzed.winRateLast10,
@@ -236,6 +239,7 @@ function App() {
         averageGameLength: analyzed.averageGameLength,
         durationDistribution: analyzed.durationDistribution,
         mapStats: analyzed.mapStats,
+        longestGame: analyzed.longestGame,
       });
 
       const name =
@@ -403,6 +407,14 @@ function App() {
                       <p className="text-xl font-semibold">{stats.currentStreak}</p>
                     </div>
                   </div>
+                  {/* Max Win Streak */}
+                  <div className="flex items-center space-x-3">
+                    <Trophy className="text-green-400" />
+                    <div>
+                      <p className="text-gray-400">Max Win Streak</p>
+                      <p className="text-xl font-semibold">{stats.maxWinStreak ?? stats.longestWinStreak}</p>
+                    </div>
+                  </div>
                   {/* Favourite Civ */}
                   {(() => {
                     // Get favorite civ (most games played)
@@ -458,6 +470,28 @@ function App() {
                       <p className="text-xl font-semibold">{stats.averageGameLength}</p>
                     </div>
                   </div>
+                  {/* Longest Game */}
+                  {'longestGame' in stats && stats.longestGame !== undefined && (
+                    <div className="flex items-center space-x-3">
+                      <span className="text-red-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v5l3 3" />
+                        </svg>
+                      </span>
+                      <div>
+                        <p className="text-gray-400">Longest Game</p>
+                        <p className="text-xl font-semibold">
+                          {(() => {
+                            const sec = stats.longestGame ?? 0;
+                            const min = Math.floor(sec / 60);
+                            const s = sec % 60;
+                            return `${min}:${s.toString().padStart(2, '0')}`;
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

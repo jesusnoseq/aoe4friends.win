@@ -37,6 +37,8 @@ export interface AnalyzeGamesResult {
       losses: number;
     };
   };
+  maxWinStreak?: number;
+  longestGame?: number;
 }
 
 export type DurationDistribution = {
