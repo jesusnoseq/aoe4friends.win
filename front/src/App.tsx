@@ -245,9 +245,10 @@ function App() {
         getNicknameFromGames(games, id) ||
         id.toString();
 
-      setCurrentNickname(name); // <-- Set nickname for display
+      setCurrentNickname(name);
       addRecentQuery(name, id);
-    } catch {
+    } catch (err){
+      console.error('Failed to fetch stats', err);
       setError('Failed to fetch stats. Please try again.');
     } finally {
       setIsLoading(false);
