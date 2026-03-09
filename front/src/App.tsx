@@ -11,6 +11,7 @@ import { fetchGamesWithCache } from './services/aoe4worldRequests';
 import GameDurationChart from './components/GameDurationChart';
 import MapBarChart from './components/MapBarChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
+import BalancedTeams from './components/BalancedTeams';
 
 interface GameStats {
   wins: number;
@@ -48,6 +49,7 @@ interface CivStats {
 
 interface AllyOpponent {
   Name: string;
+  profile_id?: number;
   Stat: {
     games: number;
     wins: number;
@@ -87,6 +89,7 @@ function MainApp() {
   const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
   const [showRecent, setShowRecent] = useState<boolean>(false);
   const [currentNickname, setCurrentNickname] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'stats' | 'balanced'>('stats');
   const navigate = useNavigate();
   const { profileIdParam } = useParams();
 
@@ -409,7 +412,38 @@ function MainApp() {
           </button>
         </form>
 
-        {stats && (
+        {/* Tabs */}
+        <div className="flex border-b border-gray-600 mb-6">
+          <button
+            className={`px-6 py-2 font-semibold transition-colors ${
+              activeTab === 'stats'
+                ? 'border-b-2 border-blue-400 text-blue-400'
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => setActiveTab('stats')}
+          >
+            Stats
+          </button>
+          <button
+            className={`px-6 py-2 font-semibold transition-colors ${
+              activeTab === 'balanced'
+                ? 'border-b-2 border-blue-400 text-blue-400'
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => setActiveTab('balanced')}
+          >
+            Create Balanced Teams
+          </button>
+        </div>
+
+        {activeTab === 'balanced' && (
+          <BalancedTeams
+            allies={stats?.allies ?? []}
+            currentPlayer={stats && /^\d+$/.test(profileId) ? { profile_id: Number(profileId), name: currentNickname } : undefined}
+          />
+        )}
+
+        {activeTab === 'stats' && stats && (
           <div className="space-y-8">
             {/* General stats first */}
             <div className="bg-gray-700 rounded-lg p-6 shadow-xl">

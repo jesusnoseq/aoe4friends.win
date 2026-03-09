@@ -63,3 +63,60 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
   }
   return allGames;
 }
+
+// --- CBT (Create Balanced Teams) helpers ---
+
+export interface CBTPlayerProfile {
+  profile_id: number;
+  name: string;
+  ratings: {
+    rm_1v1?: number;
+    qm_1v1?: number;
+    qm_2v2?: number;
+    qm_3v3?: number;
+    qm_4v4?: number;
+  };
+}
+
+function parseCBTProfile(data: any): CBTPlayerProfile {
+  const getRating = (...keys: string[]): number | undefined => {
+    for (const key of keys) {
+      if (data[key]?.rating !== undefined) return data[key].rating;
+      if (data.leaderboards?.[key]?.rating !== undefined) return data.leaderboards[key].rating;
+      if (data.modes?.[key]?.rating !== undefined) return data.modes[key].rating;
+    }
+    return undefined;
+  };
+  return {
+    profile_id: data.profile_id,
+    name: data.name,
+    ratings: {
+      rm_1v1: getRating('rm_1vs1_elo', 'rm_1v1', 'rm_solo'),
+      qm_1v1: getRating('qm_1v1', 'qm_solo'),
+      qm_2v2: getRating('qm_2v2'),
+      qm_3v3: getRating('qm_3v3'),
+      qm_4v4: getRating('qm_4v4'),
+    },
+  };
+}
+
+export async function fetchPlayerProfileForCBT(profileId: number): Promise<CBTPlayerProfile> {
+  const res = await fetch(`https://aoe4world.com/api/v0/players/${profileId}`);
+  if (!res.ok) throw new Error(`Failed to fetch player ${profileId}`);
+  return parseCBTProfile(await res.json());
+}
+
+export async function searchPlayersForCBT(
+  query: string
+): Promise<Array<{ profile_id: number; name: string; rating?: number }>> {
+  const res = await fetch(
+    `https://aoe4world.com/api/v0/players/search?query=${encodeURIComponent(query)}`
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.players || []).map((p: any) => ({
+    profile_id: p.profile_id,
+    name: p.name,
+    rating: p.rating,
+  }));
+}

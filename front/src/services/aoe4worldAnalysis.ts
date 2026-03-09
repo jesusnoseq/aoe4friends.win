@@ -2,8 +2,8 @@ import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution } 
 import { Game, Player } from './aoe4worldTypes.request';
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
-  const opponents: { [name: string]: AllyOpponentStat } = {};
-  const allies: { [name: string]: AllyOpponentStat } = {};
+  const opponents: { [name: string]: AllyOpponentStat & { profile_id: number } } = {};
+  const allies: { [name: string]: AllyOpponentStat & { profile_id: number } } = {};
   const civStats: { [civ: string]: CivStat } = {};
   let wins = 0, losses = 0, totalGames = 0;
 
@@ -51,11 +51,11 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
         if (other.profile_id === profileId) continue;
         const name = other.name;
         if (tIdx === playerTeamIndex) {
-          if (!allies[name]) allies[name] = { games: 0, wins: 0, losses: 0 };
+          if (!allies[name]) allies[name] = { games: 0, wins: 0, losses: 0, profile_id: other.profile_id };
           allies[name].games++;
           if (playerWon) allies[name].wins++; else allies[name].losses++;
         } else {
-          if (!opponents[name]) opponents[name] = { games: 0, wins: 0, losses: 0 };
+          if (!opponents[name]) opponents[name] = { games: 0, wins: 0, losses: 0, profile_id: other.profile_id };
           opponents[name].games++;
           if (playerWon) opponents[name].losses++; else opponents[name].wins++;
         }
@@ -142,10 +142,10 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
 
   // Sort allies/opponents by games desc
   const sortedAllies = Object.entries(allies)
-    .map(([Name, Stat]) => ({ Name, Stat }))
+    .map(([Name, stat]) => ({ Name, profile_id: stat.profile_id, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
     .sort((a, b) => b.Stat.games - a.Stat.games);
   const sortedOpponents = Object.entries(opponents)
-    .map(([Name, Stat]) => ({ Name, Stat }))
+    .map(([Name, stat]) => ({ Name, profile_id: stat.profile_id, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
     .sort((a, b) => b.Stat.games - a.Stat.games);
 
   const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;

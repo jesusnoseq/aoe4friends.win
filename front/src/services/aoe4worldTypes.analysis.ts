@@ -12,6 +12,7 @@ export interface AllyOpponentStat {
 
 export interface NameStatPair {
   Name: string;
+  profile_id?: number;
   Stat: AllyOpponentStat;
 }
 
