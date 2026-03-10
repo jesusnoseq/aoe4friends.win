@@ -4,13 +4,16 @@ import { fetchPlayerProfileForCBT, searchPlayersForCBT } from '../services/aoe4w
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type RatingMode = 'rm_1v1' | 'qm_1v1' | 'qm_2v2' | 'qm_3v3' | 'qm_4v4';
+type RatingMode = 'rm_1v1' | 'qm_1v1' | 'rm_2v2' | 'qm_2v2' | 'rm_3v3' |'qm_3v3' | 'rm_4v4' | 'qm_4v4';
 
 const RATING_MODES: { key: RatingMode; label: string }[] = [
   { key: 'rm_1v1', label: 'RM 1v1' },
   { key: 'qm_1v1', label: 'QM 1v1' },
+  { key: 'rm_2v2', label: 'RM 2v2' },
   { key: 'qm_2v2', label: 'QM 2v2' },
+  { key: 'rm_3v3', label: 'RM 3v3' },
   { key: 'qm_3v3', label: 'QM 3v3' },
+  { key: 'rm_4v4', label: 'RM 4v4' },
   { key: 'qm_4v4', label: 'QM 4v4' },
 ];
 
@@ -27,7 +30,7 @@ const AI_DIFFICULTIES = [
 interface CBTPlayer {
   profile_id: number;
   name: string;
-  ratings: { rm_1v1?: number; qm_1v1?: number; qm_2v2?: number; qm_3v3?: number; qm_4v4?: number };
+  ratings: { rm_1v1?: number; qm_1v1?: number; rm_2v2?: number; qm_2v2?: number; rm_3v3?: number; qm_3v3?: number; rm_4v4?: number; qm_4v4?: number };
   isAI?: boolean;
   aiDifficulty?: string;
 }
@@ -54,7 +57,7 @@ interface Props {
 // ─── Algorithm ───────────────────────────────────────────────────────────────
 
 function getBalanceElo(player: CBTPlayer, mode: RatingMode): number {
-  const order: RatingMode[] = [mode, 'rm_1v1', 'qm_1v1', 'qm_2v2', 'qm_3v3', 'qm_4v4'];
+  const order: RatingMode[] = [mode, 'rm_1v1', 'qm_1v1', 'rm_2v2', 'qm_2v2', 'rm_3v3', 'qm_3v3', 'rm_4v4', 'qm_4v4'];
   for (const m of order) {
     if (player.ratings[m] !== undefined) return player.ratings[m]!;
   }
@@ -120,7 +123,7 @@ function createTeams(roster: CBTPlayer[], mode: RatingMode): TeamsState {
       const ai: CBTPlayer = {
         profile_id: -(i + 1),
         name: `AI (${d.name})`,
-        ratings: { rm_1v1: d.repElo, qm_1v1: d.repElo, qm_2v2: d.repElo, qm_3v3: d.repElo, qm_4v4: d.repElo },
+        ratings: { rm_1v1: d.repElo, qm_1v1: d.repElo, rm_2v2: d.repElo, qm_2v2: d.repElo, rm_3v3: d.repElo, qm_3v3: d.repElo, rm_4v4: d.repElo, qm_4v4: d.repElo },
         isAI: true,
         aiDifficulty: d.name,
       };
@@ -243,7 +246,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
   if (!teams) {
     return (
       <div className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
 
           {/* Left: Player selection */}
           <div className="bg-gray-800 rounded-lg p-4">

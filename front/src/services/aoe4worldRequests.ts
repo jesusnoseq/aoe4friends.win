@@ -72,8 +72,11 @@ export interface CBTPlayerProfile {
   ratings: {
     rm_1v1?: number;
     qm_1v1?: number;
+    rm_2v2?: number;
     qm_2v2?: number;
+    rm_3v3?: number;
     qm_3v3?: number;
+    rm_4v4?: number;
     qm_4v4?: number;
   };
 }
@@ -91,10 +94,13 @@ function parseCBTProfile(data: any): CBTPlayerProfile {
     profile_id: data.profile_id,
     name: data.name,
     ratings: {
-      rm_1v1: getRating('rm_1vs1_elo', 'rm_1v1', 'rm_solo'),
+      rm_1v1: getRating('rm_1v1', 'rm_1v1_elo', 'rm_solo'),
       qm_1v1: getRating('qm_1v1', 'qm_solo'),
+      rm_2v2: getRating('rm_2v2', 'rm_2v2_elo'),
       qm_2v2: getRating('qm_2v2'),
+      rm_3v3: getRating('rm_3v3', 'rm_3v3_elo'),
       qm_3v3: getRating('qm_3v3'),
+      rm_4v4: getRating('rm_4v4', 'rm_4v4_elo'),
       qm_4v4: getRating('qm_4v4'),
     },
   };
