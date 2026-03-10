@@ -418,11 +418,8 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
             <span className="font-medium text-sm flex items-center gap-2">
               {player.isAI && <span title={player.aiDifficulty}>🤖</span>}
               <span>{player.name}</span>
-              {player.isAI && (
-                <span className="text-xs text-orange-400 font-normal">({player.aiDifficulty})</span>
-              )}
             </span>
-            <span className="text-sm text-blue-300 ml-3">{getBalanceElo(player, balanceMode)}</span>
+             {!player.isAI && <span className="text-sm text-blue-300 ml-3">{getBalanceElo(player, balanceMode)}</span>}
           </li>
         ))}
         {team.length === 0 && (
