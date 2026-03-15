@@ -111,8 +111,8 @@ function createTeams(roster: CBTPlayer[], mode: RatingMode): TeamsState {
   const best = bestSplitForSize(roster, mode);
   if (best.diff <= 50) return { ...best, usedAI: false, balanced: true };
 
-  // Step 2 – try adding an AI
-  if (roster.length < 8) {
+  // Step 2 – try adding an AI (only when roster is odd; even counts split evenly without AI)
+  if (roster.length < 8 && roster.length % 2 !== 0) {
     const maxElo = Math.max(...roster.map(p => getBalanceElo(p, mode)));
     const minAiIdx = maxElo >= 800
       ? AI_DIFFICULTIES.findIndex(d => d.name === 'Hard')
