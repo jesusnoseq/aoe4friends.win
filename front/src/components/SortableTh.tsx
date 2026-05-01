@@ -14,13 +14,14 @@ interface SortableThProps {
     column: string;
     direction: 'asc' | 'desc';
   }>>;
+  className?: string;
 }
 
-const SortableTh: React.FC<SortableThProps> = ({ label, column, table, tableSort, setTableSort }) => {
+const SortableTh: React.FC<SortableThProps> = ({ label, column, table, tableSort, setTableSort, className }) => {
   const active = tableSort.table === table && tableSort.column === column;
   return (
     <th
-      className="py-2 px-3 cursor-pointer select-none"
+      className={`py-2 px-3 cursor-pointer select-none ${className || ''}`}
       onClick={() => {
         setTableSort(prev => {
           if (prev.table === table && prev.column === column) {

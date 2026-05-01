@@ -35,15 +35,15 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
   return (
     <div className="bg-gray-700 rounded-lg p-4 shadow">
       <h3 className="text-lg font-semibold mb-4">Top 20 Enemies</h3>
-      <table className="w-full text-left text-sm border-separate border-spacing-y-1">
+      <table className="w-full text-left text-sm border-separate border-spacing-y-1 table-fixed">
         <thead>
           <tr className="bg-gray-800">
-            <th className="py-2 px-3 rounded-l-lg">#</th>
-            <SortableTh label="Name" column="name" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
-            <SortableTh label="Games" column="games" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
-            <SortableTh label="Your Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
-            <SortableTh label="Your Losses" column="losses" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
-            <SortableTh label="Win Rate" column="winrate" table="opponents" tableSort={tableSort} setTableSort={setTableSort} />
+            <th className="py-2 px-3 rounded-l-lg w-10">#</th>
+            <SortableTh label="Name" column="name" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-2/5" />
+            <SortableTh label="Games" column="games" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+            <SortableTh label="Your Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+            <SortableTh label="Your Losses" column="losses" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+            <SortableTh label="Win Rate" column="winrate" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
           </tr>
         </thead>
         <tbody>
@@ -55,7 +55,7 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
                 className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}
               >
                 <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
-                <td className="py-2 px-3 break-all">{op.Name}</td>
+                <td className="py-2 px-3 truncate">{op.Name}</td>
                 <td className="py-2 px-3">{op.Stat.games}</td>
                 {/* Show your wins (opponent's losses) */}
                 <td className="py-2 px-3 text-green-400">{op.Stat.losses}</td>

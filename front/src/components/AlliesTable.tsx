@@ -37,15 +37,15 @@ const AlliesTable: React.FC<AlliesTableProps> = ({ stats, tableSort, setTableSor
       {list.length === 0 ? (
         <p className="text-gray-400">No team‐mate data available.</p>
       ) : (
-        <table className="w-full text-left text-sm border-separate border-spacing-y-1">
+        <table className="w-full text-left text-sm border-separate border-spacing-y-1 table-fixed">
           <thead>
             <tr className="bg-gray-800">
-              <th className="py-2 px-3 rounded-l-lg">#</th>
-              <SortableTh label="Name" column="name" table="allies" tableSort={tableSort} setTableSort={setTableSort} />
-              <SortableTh label="Games" column="games" table="allies" tableSort={tableSort} setTableSort={setTableSort} />
-              <SortableTh label="Wins" column="wins" table="allies" tableSort={tableSort} setTableSort={setTableSort} />
-              <SortableTh label="Losses" column="losses" table="allies" tableSort={tableSort} setTableSort={setTableSort} />
-              <SortableTh label="Win Rate" column="winrate" table="allies" tableSort={tableSort} setTableSort={setTableSort} />
+              <th className="py-2 px-3 rounded-l-lg w-10">#</th>
+              <SortableTh label="Name" column="name" table="allies" tableSort={tableSort} setTableSort={setTableSort} className="w-2/5" />
+              <SortableTh label="Games" column="games" table="allies" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+              <SortableTh label="Wins" column="wins" table="allies" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+              <SortableTh label="Losses" column="losses" table="allies" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+              <SortableTh label="Win Rate" column="winrate" table="allies" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
             </tr>
           </thead>
           <tbody>
@@ -55,7 +55,7 @@ const AlliesTable: React.FC<AlliesTableProps> = ({ stats, tableSort, setTableSor
                 <tr key={ally.Name + idx}
                     className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}>
                   <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
-                  <td className="py-2 px-3 break-all">{ally.Name}</td>
+                  <td className="py-2 px-3 truncate">{ally.Name}</td>
                   <td className="py-2 px-3">{ally.Stat.games}</td>
                   <td className="py-2 px-3 text-green-400">{ally.Stat.wins}</td>
                   <td className="py-2 px-3 text-red-400">{ally.Stat.losses}</td>
