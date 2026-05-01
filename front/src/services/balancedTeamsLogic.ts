@@ -2,6 +2,14 @@
 
 export type RatingMode = 'rm_1v1' | 'qm_1v1' | 'rm_2v2' | 'qm_2v2' | 'rm_3v3' | 'qm_3v3' | 'rm_4v4' | 'qm_4v4';
 
+export type BalanceAlgorithm = 'raw-elo' | 'strength-sum' | 'strength-std-max';
+
+export interface AlgorithmMeta {
+  key: BalanceAlgorithm;
+  label: string;
+  description: string;
+}
+
 export interface CBTPlayer {
   profile_id: number;
   name: string;
@@ -16,9 +24,14 @@ export interface TeamsState {
   diff: number;
   balanced: boolean;
   usedAI: boolean;
+  algorithm: BalanceAlgorithm;
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
+
+export const STRENGTH_COEFFICIENT = 1000;  // For strength = 10^(elo / 400)
+export const STRENGTH_MAX_WEIGHT = 0.15;  // Weight of max strength in strength-std-max
+export const STRENGTH_STD_WEIGHT = 0.15;   // Weight of standard deviation in strength-std-max
 
 export const AI_DIFFICULTIES = [
   { name: 'Easy',        minElo: 500,  maxElo: 700,  repElo: 600  },
@@ -28,6 +41,24 @@ export const AI_DIFFICULTIES = [
   { name: 'Ridiculous',  minElo: 900,  maxElo: 1000, repElo: 950  },
   { name: 'Outrageous',  minElo: 1000, maxElo: 1050, repElo: 1025 },
   { name: 'Absurd',      minElo: 1050, maxElo: 1300, repElo: 1175 },
+];
+
+export const BALANCE_ALGORITHMS: AlgorithmMeta[] = [
+  {
+    key: 'raw-elo',
+    label: 'Raw ELO Sum',
+    description: 'Minimizes the absolute difference in total ELO. Simple and predictable.',
+  },
+  {
+    key: 'strength-sum',
+    label: 'Strength Sum',
+    description: 'Uses strength = 10^(ELO/600). Higher-rated players carry more weight, reflecting real skill scaling.',
+  },
+  {
+    key: 'strength-std-max',
+    label: 'Strength + Std/Max',
+    description: 'Score = Σstrength + 0.15×max − 0.20×σ. Rewards team depth while penalizing lopsided compositions.',
+  },
 ];
 
 // ─── Algorithm ───────────────────────────────────────────────────────────────
@@ -44,6 +75,34 @@ export function teamElo(team: CBTPlayer[], mode: RatingMode): number {
   return team.reduce((s, p) => s + getBalanceElo(p, mode), 0);
 }
 
+export function computeTeamScore(team: CBTPlayer[], mode: RatingMode, algorithm: BalanceAlgorithm): number {
+  if (algorithm === 'raw-elo') return teamElo(team, mode);
+  const strengths = team.map(p => Math.pow(10, getBalanceElo(p, mode) / STRENGTH_COEFFICIENT));
+  const sum = strengths.reduce((s, v) => s + v, 0);
+  if (algorithm === 'strength-sum') return sum;
+  // strength-std-max
+  if (strengths.length === 0) return 0;
+  const max = Math.max(...strengths);
+  const mean = sum / strengths.length;
+  const stdDev = Math.sqrt(strengths.reduce((s, v) => s + (v - mean) ** 2, 0) / strengths.length);
+  return sum + STRENGTH_MAX_WEIGHT * max - STRENGTH_STD_WEIGHT * stdDev;
+}
+
+export function isTeamBalanced(
+  team1: CBTPlayer[],
+  team2: CBTPlayer[],
+  mode: RatingMode,
+  algorithm: BalanceAlgorithm,
+): boolean {
+  if (algorithm === 'raw-elo') {
+    return Math.abs(teamElo(team1, mode) - teamElo(team2, mode)) <= 50;
+  }
+  const s1 = computeTeamScore(team1, mode, algorithm);
+  const s2 = computeTeamScore(team2, mode, algorithm);
+  const avg = (s1 + s2) / 2;
+  return avg > 0 && Math.abs(s1 - s2) / avg <= 0.03;
+}
+
 function combinations<T>(arr: T[], k: number): T[][] {
   if (k === 0) return [[]];
   if (k > arr.length) return [];
@@ -58,34 +117,46 @@ function combinations<T>(arr: T[], k: number): T[][] {
 function findBestSplit(
   players: CBTPlayer[],
   mode: RatingMode,
-  t1Size: number
+  t1Size: number,
+  algorithm: BalanceAlgorithm,
 ): { team1: CBTPlayer[]; team2: CBTPlayer[]; diff: number } {
   const combos = combinations(players, t1Size);
   let best = { team1: [] as CBTPlayer[], team2: [] as CBTPlayer[], diff: Infinity };
   for (const combo of combos) {
     const ids = new Set(combo.map(p => p.profile_id));
     const rest = players.filter(p => !ids.has(p.profile_id));
-    const diff = Math.abs(teamElo(combo, mode) - teamElo(rest, mode));
+    const diff = Math.abs(computeTeamScore(combo, mode, algorithm) - computeTeamScore(rest, mode, algorithm));
     if (diff < best.diff) best = { team1: combo, team2: rest, diff };
   }
   return best;
 }
 
-function bestSplitForSize(players: CBTPlayer[], mode: RatingMode): ReturnType<typeof findBestSplit> {
+function bestSplitForSize(
+  players: CBTPlayer[],
+  mode: RatingMode,
+  algorithm: BalanceAlgorithm,
+): ReturnType<typeof findBestSplit> {
   const N = players.length;
   const half = Math.floor(N / 2);
-  let best = findBestSplit(players, mode, half);
+  let best = findBestSplit(players, mode, half, algorithm);
   if (N % 2 !== 0) {
-    const alt = findBestSplit(players, mode, Math.ceil(N / 2));
+    const alt = findBestSplit(players, mode, Math.ceil(N / 2), algorithm);
     if (alt.diff < best.diff) best = alt;
   }
   return best;
 }
 
-export function createTeams(roster: CBTPlayer[], mode: RatingMode): TeamsState {
+export function createTeams(
+  roster: CBTPlayer[],
+  mode: RatingMode,
+  algorithm: BalanceAlgorithm = 'raw-elo',
+): TeamsState {
   // Step 1 – pure player split
-  const best = bestSplitForSize(roster, mode);
-  if (best.diff <= 50) return { ...best, usedAI: false, balanced: true };
+  const best = bestSplitForSize(roster, mode, algorithm);
+  const eloDiff = Math.abs(teamElo(best.team1, mode) - teamElo(best.team2, mode));
+  if (isTeamBalanced(best.team1, best.team2, mode, algorithm)) {
+    return { team1: best.team1, team2: best.team2, diff: eloDiff, usedAI: false, balanced: true, algorithm };
+  }
 
   // Step 2 – try adding an AI (only when roster is odd; even counts split evenly without AI)
   if (roster.length < 8 && roster.length % 2 !== 0) {
@@ -104,11 +175,14 @@ export function createTeams(roster: CBTPlayer[], mode: RatingMode): TeamsState {
         aiDifficulty: d.name,
       };
       const withAI = [...roster, ai];
-      const aiSplit = bestSplitForSize(withAI, mode);
-      if (aiSplit.diff <= 50) return { ...aiSplit, usedAI: true, balanced: true };
+      const aiSplit = bestSplitForSize(withAI, mode, algorithm);
+      if (isTeamBalanced(aiSplit.team1, aiSplit.team2, mode, algorithm)) {
+        const aiEloDiff = Math.abs(teamElo(aiSplit.team1, mode) - teamElo(aiSplit.team2, mode));
+        return { team1: aiSplit.team1, team2: aiSplit.team2, diff: aiEloDiff, usedAI: true, balanced: true, algorithm };
+      }
     }
   }
 
   // Step 3 – return best we found (imbalanced)
-  return { ...best, usedAI: false, balanced: false };
+  return { team1: best.team1, team2: best.team2, diff: eloDiff, usedAI: false, balanced: false, algorithm };
 }
