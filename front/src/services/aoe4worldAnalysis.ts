@@ -2,8 +2,8 @@ import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution } 
 import { Game, Player } from './aoe4worldTypes.request';
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
-  const opponents: { [name: string]: AllyOpponentStat & { profile_id: number } } = {};
-  const allies: { [name: string]: AllyOpponentStat & { profile_id: number } } = {};
+  const opponents: { [profile_id: number]: AllyOpponentStat & { profile_id: number; name: string } } = {};
+  const allies: { [profile_id: number]: AllyOpponentStat & { profile_id: number; name: string } } = {};
   const civStats: { [civ: string]: CivStat } = {};
   let wins = 0, losses = 0, totalGames = 0;
 
@@ -50,14 +50,15 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
         const other = member.player;
         if (other.profile_id === profileId) continue;
         const name = other.name;
+        const pid = other.profile_id;
         if (tIdx === playerTeamIndex) {
-          if (!allies[name]) allies[name] = { games: 0, wins: 0, losses: 0, profile_id: other.profile_id };
-          allies[name].games++;
-          if (playerWon) allies[name].wins++; else allies[name].losses++;
+          if (!allies[pid]) allies[pid] = { games: 0, wins: 0, losses: 0, profile_id: pid, name };
+          allies[pid].games++;
+          if (playerWon) allies[pid].wins++; else allies[pid].losses++;
         } else {
-          if (!opponents[name]) opponents[name] = { games: 0, wins: 0, losses: 0, profile_id: other.profile_id };
-          opponents[name].games++;
-          if (playerWon) opponents[name].losses++; else opponents[name].wins++;
+          if (!opponents[pid]) opponents[pid] = { games: 0, wins: 0, losses: 0, profile_id: pid, name };
+          opponents[pid].games++;
+          if (playerWon) opponents[pid].losses++; else opponents[pid].wins++;
         }
       }
     }
@@ -141,11 +142,11 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
     .forEach(([k, v]) => { sortedCivStats[k] = v; });
 
   // Sort allies/opponents by games desc
-  const sortedAllies = Object.entries(allies)
-    .map(([Name, stat]) => ({ Name, profile_id: stat.profile_id, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
+  const sortedAllies = Object.values(allies)
+    .map(stat => ({ Name: stat.name, profile_id: stat.profile_id, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
     .sort((a, b) => b.Stat.games - a.Stat.games);
-  const sortedOpponents = Object.entries(opponents)
-    .map(([Name, stat]) => ({ Name, profile_id: stat.profile_id, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
+  const sortedOpponents = Object.values(opponents)
+    .map(stat => ({ Name: stat.name, profile_id: stat.profile_id, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
     .sort((a, b) => b.Stat.games - a.Stat.games);
 
   const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
