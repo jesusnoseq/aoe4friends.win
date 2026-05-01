@@ -607,12 +607,12 @@ function MainApp() {
             )}
 
             {/* Win/Loss Distribution */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
-                <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
-                <WinLossChart stats={stats} />
-              </div>
-            </div>
+            // <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            //   <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
+            //     <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
+            //     <WinLossChart stats={stats} />
+            //   </div>
+            // </div>
           </div>
         )}
       </div>
