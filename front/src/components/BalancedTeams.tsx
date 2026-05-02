@@ -153,7 +153,10 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
           }
           return acc;
         }, {})
-      ).map(e => ({ profile_id: e.profile_id, name: e.name, subtitle: `${e.games} games` }));
+      )
+      .sort((a, b) => b.games - a.games)
+      .slice(0, 30)
+      .map(e => ({ profile_id: e.profile_id, name: e.name, subtitle: `${e.games} games` }));
 
   // ── Roster phase ─────────────────────────────────────────────────────────
   if (phase === 'roster') {
