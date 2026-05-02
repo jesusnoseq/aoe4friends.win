@@ -34,13 +34,13 @@ export const STRENGTH_MAX_WEIGHT = 0.15;  // Weight of max strength in strength-
 export const STRENGTH_STD_WEIGHT = 0.15;   // Weight of standard deviation in strength-std-max
 
 export const AI_DIFFICULTIES = [
-  { name: 'Easy',        minElo: 500,  maxElo: 700,  repElo: 600  },
-  { name: 'Intermediate',minElo: 700,  maxElo: 750,  repElo: 725  },
-  { name: 'Hard',        minElo: 750,  maxElo: 850,  repElo: 800  },
-  { name: 'Hardest',     minElo: 850,  maxElo: 900,  repElo: 875  },
-  { name: 'Ridiculous',  minElo: 900,  maxElo: 1000, repElo: 950  },
-  { name: 'Outrageous',  minElo: 1000, maxElo: 1050, repElo: 1025 },
-  { name: 'Absurd',      minElo: 1050, maxElo: 1300, repElo: 1175 },
+  { name: 'Easy',        minElo: 600,  maxElo: 800,  repElo: 700  },
+  { name: 'Intermediate',minElo: 800,  maxElo: 850,  repElo: 825  },
+  { name: 'Hard',        minElo: 850,  maxElo: 950,  repElo: 900  },
+  { name: 'Hardest',     minElo: 950,  maxElo: 1000, repElo: 975  },
+  { name: 'Ridiculous',  minElo: 1000, maxElo: 1100, repElo: 1050 },
+  { name: 'Outrageous',  minElo: 1100, maxElo: 1150, repElo: 1125 },
+  { name: 'Absurd',      minElo: 1150, maxElo: 1400, repElo: 1275 },
 ];
 
 export const BALANCE_ALGORITHMS: AlgorithmMeta[] = [
