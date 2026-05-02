@@ -81,6 +81,7 @@ function MainApp() {
   const [profileId, setProfileId] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [stats, setStats] = useState<GameStats | null>(null);
+  const [games, setGames] = useState<Game[]>([]);
   const [error, setError] = useState<string>('');
   const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
@@ -249,9 +250,10 @@ function MainApp() {
     setShowSuggestions(false);
 
     try {
-      const games = await fetchGamesWithCache(id);
-      const analyzed = analyzeGames(games, id);
+      const fetchedGames = await fetchGamesWithCache(id);
+      const analyzed = analyzeGames(fetchedGames, id);
 
+      setGames(fetchedGames);
       setStats({
         wins: analyzed.wins,
         losses: analyzed.losses,
@@ -276,7 +278,7 @@ function MainApp() {
         forcedName ||
         selectedSuggestion?.name ||
         suggestions[0]?.name ||
-        getNicknameFromGames(games, id) ||
+        getNicknameFromGames(fetchedGames, id) ||
         id.toString();
 
       setCurrentNickname(name);
@@ -569,12 +571,16 @@ function MainApp() {
                 tableSort={tableSort}
                 setTableSort={setTableSort}
                 getSorted={getSorted}
+                games={games}
+                profileId={Number(profileIdParam) || 0}
               />
               <OpponentsTable
                 stats={stats}
                 tableSort={tableSort}
                 setTableSort={setTableSort}
                 getSorted={getSorted}
+                games={games}
+                profileId={Number(profileIdParam) || 0}
               />
             </div>
 

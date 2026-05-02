@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import SortableTh from './SortableTh';
+import { Game } from '../services/aoe4worldTypes.request';
 
 interface AllyOpponent {
   Name: string;
@@ -23,18 +24,115 @@ interface OpponentsTableProps {
   };
   setTableSort: React.Dispatch<React.SetStateAction<any>>;
   getSorted: (list: AllyOpponent[], column: string, direction: string) => AllyOpponent[];
+  games?: Game[];
+  profileId?: number;
 }
 
-const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTableSort, getSorted }) => {
-  if (!stats || !stats.opponents || stats.opponents.length === 0) return null;
-  const list = stats.opponents;
+type MatchTypeFilter = 'all' | 'quickmatch' | 'rankedmatch';
+
+const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTableSort, getSorted, games = [], profileId }) => {
+  const [matchTypeFilter, setMatchTypeFilter] = useState<MatchTypeFilter>('all');
+
+  // Filter opponents based on match type
+  const filteredOpponents = useMemo(() => {
+    if (matchTypeFilter === 'all' || !games || games.length === 0 || !profileId) {
+      return stats?.opponents || [];
+    }
+
+    const isQuickMatch = matchTypeFilter === 'quickmatch';
+    const opponents: { [profile_id: number]: { games: number; wins: number; losses: number; name: string } } = {};
+
+    for (const game of games) {
+      const leaderboardStr = String(game.leaderboard || game.kind);
+      
+      // Filter by match type
+      if (isQuickMatch && !leaderboardStr.startsWith('qm_')) continue;
+      if (!isQuickMatch && !leaderboardStr.startsWith('rm_')) continue;
+
+      let playerInfo = null;
+      let playerTeamIndex = -1;
+      
+      // Find the player in the game
+      for (let tIdx = 0; tIdx < game.teams.length; tIdx++) {
+        for (const member of game.teams[tIdx]) {
+          if (member.player.profile_id === profileId) {
+            playerInfo = member.player;
+            playerTeamIndex = tIdx;
+            break;
+          }
+        }
+        if (playerInfo) break;
+      }
+      
+      if (!playerInfo) continue;
+      
+      const playerWon = playerInfo.result === 'win';
+      
+      // Process opponents
+      for (let tIdx = 0; tIdx < game.teams.length; tIdx++) {
+        if (tIdx === playerTeamIndex) continue; // Skip allies
+        
+        for (const member of game.teams[tIdx]) {
+          const opponent = member.player;
+          const pid = opponent.profile_id;
+          const name = opponent.name;
+          
+          if (!opponents[pid]) {
+            opponents[pid] = { games: 0, wins: 0, losses: 0, name };
+          }
+          opponents[pid].games++;
+          if (playerWon) opponents[pid].losses++; else opponents[pid].wins++;
+        }
+      }
+    }
+
+    return Object.values(opponents)
+      .map(stat => ({ Name: stat.name, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
+      .sort((a, b) => b.Stat.games - a.Stat.games);
+  }, [matchTypeFilter, stats, games, profileId]);
+  if (!filteredOpponents || filteredOpponents.length === 0) return null;
+  const list = filteredOpponents;
   const sortedList =
     tableSort.table === 'opponents'
       ? getSorted(list, tableSort.column, tableSort.direction)
       : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
   return (
     <div className="bg-gray-700 rounded-lg p-4 shadow">
-      <h3 className="text-lg font-semibold mb-4">Top 20 Enemies</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Top 20 Enemies</h3>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setMatchTypeFilter('all')}
+            className={`px-3 py-1 rounded text-sm font-medium transition ${
+              matchTypeFilter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setMatchTypeFilter('quickmatch')}
+            className={`px-3 py-1 rounded text-sm font-medium transition ${
+              matchTypeFilter === 'quickmatch'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+            }`}
+          >
+            Quick Match
+          </button>
+          <button
+            onClick={() => setMatchTypeFilter('rankedmatch')}
+            className={`px-3 py-1 rounded text-sm font-medium transition ${
+              matchTypeFilter === 'rankedmatch'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+            }`}
+          >
+            Ranked Match
+          </button>
+        </div>
+      </div>
       <table className="w-full text-left text-sm border-separate border-spacing-y-1 table-fixed">
         <thead>
           <tr className="bg-gray-800">

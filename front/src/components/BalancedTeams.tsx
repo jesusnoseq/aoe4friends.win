@@ -147,7 +147,6 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
           const key = a.profile_id ?? a.Name;
           if (acc[key]) {
             acc[key].games += a.Stat.games;
-            acc[key].name = a.Name;
           } else {
             acc[key] = { profile_id: a.profile_id, name: a.Name, games: a.Stat.games };
           }
