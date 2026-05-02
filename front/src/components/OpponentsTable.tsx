@@ -88,7 +88,8 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
 
     return Object.values(opponents)
       .map(stat => ({ Name: stat.name, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
-      .sort((a, b) => b.Stat.games - a.Stat.games);
+      .sort((a, b) => b.Stat.games - a.Stat.games)
+      .slice(0, 20);
   }, [matchTypeFilter, stats, games, profileId]);
   if (!filteredOpponents || filteredOpponents.length === 0) return null;
   const list = filteredOpponents;

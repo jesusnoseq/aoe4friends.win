@@ -85,7 +85,8 @@ const AlliesTable: React.FC<AlliesTableProps> = ({ stats, tableSort, setTableSor
 
     return Object.values(allies)
       .map(stat => ({ Name: stat.name, Stat: { games: stat.games, wins: stat.wins, losses: stat.losses } }))
-      .sort((a, b) => b.Stat.games - a.Stat.games);
+      .sort((a, b) => b.Stat.games - a.Stat.games)
+      .slice(0, 20);
   }, [matchTypeFilter, stats, games, profileId]);
   const list = filteredAllies;
   const sortedList =
