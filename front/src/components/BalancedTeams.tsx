@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Trophy } from 'lucide-react';
 import { fetchPlayerProfileForCBT, searchPlayersForCBT } from '../services/aoe4worldRequests';
 import { type RatingMode, type CBTPlayer, type TeamsState, type BalanceAlgorithm, getBalanceElo, teamElo, computeTeamScore, createTeams, isTeamBalanced, BALANCE_ALGORITHMS, STRENGTH_COEFFICIENT } from '../services/balancedTeamsLogic';
+import Spinner from './Spinner';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -164,7 +165,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
 
           {/* Left: Player selection */}
-          <div className="bg-gray-800 rounded-lg p-4">
+          <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-400" /> Add Players
             </h3>
@@ -211,10 +212,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                       }`}
                     >
                       {isLoading ? (
-                        <svg className="animate-spin w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
+                        <Spinner size={12} className="text-gray-400" />
                       ) : alreadyIn ? '✓' : '+'}
                     </button>
                   </li>
@@ -229,7 +227,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
           </div>
 
           {/* Right: Roster */}
-          <div className="bg-gray-800 rounded-lg p-4 flex flex-col">
+          <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40 flex flex-col">
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-yellow-400" /> Match Roster
               <span className={`ml-auto text-sm font-normal ${maxReached ? 'text-red-400' : 'text-gray-400'}`}>
@@ -244,18 +242,18 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
               <div className="overflow-x-auto flex-1">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-gray-400 border-b border-gray-700 text-xs">
-                      <th className="text-left py-2 pr-3">Name</th>
-                      <th className="text-center py-2 px-1">#</th>
+                    <tr className="text-gray-400 border-b border-gray-700 text-xs bg-gray-700/40">
+                      <th className="text-left py-2 pr-3 text-gray-300">Name</th>
+                      <th className="text-center py-2 px-1 text-gray-300">#</th>
                       {RATING_MODES.map(m => (
                         <th
                           key={m.key}
                           onClick={() => setBalanceMode(m.key)}
                           title={`Balance by ${m.label}`}
-                          className={`text-center py-2 px-1 cursor-pointer select-none rounded transition-colors whitespace-nowrap ${
+                          className={`text-center py-2 px-1 cursor-pointer select-none rounded transition-colors whitespace-nowrap hover:text-white ${
                             balanceMode === m.key
-                              ? 'text-blue-400 font-bold underline'
-                              : 'hover:text-white'
+                              ? 'text-blue-400 font-bold'
+                              : 'text-gray-400'
                           }`}
                         >
                           {m.label}
@@ -365,7 +363,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
     const strengthSum   = computeTeamScore(team, balanceMode, 'strength-sum');
     const strengthAdv   = computeTeamScore(team, balanceMode, 'strength-std-max');
     return (
-      <div className="bg-gray-800 rounded-lg p-4 flex flex-col">
+      <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40 flex flex-col">
         <h3 className="text-lg font-bold mb-4 text-center">{label}</h3>
         <ul className="space-y-2 flex-1">
           {team.map(player => {

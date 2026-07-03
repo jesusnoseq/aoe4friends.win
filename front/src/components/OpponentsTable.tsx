@@ -93,83 +93,66 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
       .sort((a, b) => b.Stat.games - a.Stat.games)
       .slice(0, 20);
   }, [matchTypeFilter, stats, games, profileId]);
-  if (!filteredOpponents || filteredOpponents.length === 0) return null;
-  const list = filteredOpponents;
+  const list = filteredOpponents || [];
   const sortedList =
     tableSort.table === 'opponents'
       ? getSorted(list, tableSort.column, tableSort.direction)
       : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
   return (
-    <div className="bg-gray-700 rounded-lg p-4 shadow">
+    <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Top 20 Enemies</h3>
         <div className="flex gap-2">
-          <button
-            onClick={() => setMatchTypeFilter('all')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
-              matchTypeFilter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setMatchTypeFilter('quickmatch')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
-              matchTypeFilter === 'quickmatch'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-            }`}
-          >
-            Quick Match
-          </button>
-          <button
-            onClick={() => setMatchTypeFilter('rankedmatch')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
-              matchTypeFilter === 'rankedmatch'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-            }`}
-          >
-            Ranked Match
-          </button>
+          {(['all', 'quickmatch', 'rankedmatch'] as MatchTypeFilter[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => setMatchTypeFilter(key)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                matchTypeFilter === key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {key === 'all' ? 'All' : key === 'quickmatch' ? 'Quick Match' : 'Ranked Match'}
+            </button>
+          ))}
         </div>
       </div>
-      <table className="w-full text-left text-sm border-separate border-spacing-y-1 table-fixed">
-        <thead>
-          <tr className="bg-gray-800">
-            <th className="py-2 px-3 rounded-l-lg w-10">#</th>
-            <SortableTh label="Name" column="name" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-2/5" />
-            <SortableTh label="Games" column="games" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
-            <SortableTh label="Your Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
-            <SortableTh label="Your Losses" column="losses" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
-            <SortableTh label="Win Rate" column="winrate" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
-          </tr>
-        </thead>
-        <tbody>
-          {sortedList
-            .slice(0, 20)
-            .map((op, idx) => (
-              <tr
-                key={op.Name}
-                className={`hover:bg-gray-600 transition ${idx % 2 === 0 ? 'bg-gray-700' : 'bg-gray-800'}`}
-              >
-                <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
-                <td className="py-2 px-3 truncate">{op.Name}</td>
-                <td className="py-2 px-3">{op.Stat.games}</td>
-                {/* Show your wins (opponent's losses) */}
-                <td className="py-2 px-3 text-green-400">{op.Stat.losses}</td>
-                {/* Show your losses (opponent's wins) */}
-                <td className="py-2 px-3 text-red-400">{op.Stat.wins}</td>
-                <td className="py-2 px-3 font-semibold">
-                  {/* Win rate: your wins / total games */}
-                  {op.Stat.games > 0 ? Math.round((op.Stat.losses / op.Stat.games) * 100) : 0}%
-                </td>
-              </tr>
-          ))}
-        </tbody>
-      </table>
+      {list.length === 0 ? (
+        <p className="text-gray-400">No opponent data available.</p>
+      ) : (
+        <table className="w-full text-left text-sm border-separate border-spacing-y-1 table-fixed">
+          <thead>
+            <tr className="bg-gray-700/60">
+              <th className="py-2 px-3 rounded-l-md w-10 text-gray-300">#</th>
+              <SortableTh label="Name" column="name" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-2/5" />
+              <SortableTh label="Games" column="games" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+              <SortableTh label="Your Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+              <SortableTh label="Your Losses" column="losses" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+              <SortableTh label="Win Rate" column="winrate" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
+            </tr>
+          </thead>
+          <tbody>
+            {sortedList
+              .slice(0, 20)
+              .map((op, idx) => (
+                <tr
+                  key={op.Name}
+                  className={`hover:bg-gray-700 transition ${idx % 2 === 0 ? 'bg-gray-800/40' : 'bg-gray-700/40'}`}
+                >
+                  <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
+                  <td className="py-2 px-3 truncate">{op.Name}</td>
+                  <td className="py-2 px-3">{op.Stat.games}</td>
+                  <td className="py-2 px-3 text-green-400">{op.Stat.losses}</td>
+                  <td className="py-2 px-3 text-red-400">{op.Stat.wins}</td>
+                  <td className="py-2 px-3 font-semibold">
+                    {op.Stat.games > 0 ? Math.round((op.Stat.losses / op.Stat.games) * 100) : 0}%
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };

@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
-import { Search, Trophy, Swords, Users2 } from 'lucide-react';
+import { Search, Trophy, Swords, Users2, Flame, Clock, Hourglass, Crown, BarChart2 } from 'lucide-react';
 import AlliesTable from './components/AlliesTable';
 import OpponentsTable from './components/OpponentsTable';
 import CivCharts from './components/CivCharts';
-import WinLossChart from './components/WinLossChart';
 import { analyzeGames } from './services/aoe4worldAnalysis';
 import { Game, Player } from './services/aoe4worldTypes.request';
 import { fetchGamesWithCache } from './services/aoe4worldRequests';
@@ -13,6 +12,7 @@ import MapBarChart from './components/MapBarChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
 import BalancedTeams from './components/BalancedTeams';
 import AICoach from './components/AICoach';
+import Spinner from './components/Spinner';
 
 interface GameStats {
   wins: number;
@@ -321,18 +321,18 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-8 flex flex-col min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-4 sm:p-8 flex flex-col">
       {/* Loading spinner overlay */}
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <svg className="animate-spin h-16 w-16 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
+          <Spinner size={64} className="text-blue-400" />
         </div>
       )}
-      <div className="max-w-6xl mx-auto flex-1">
-        <h1 className="text-4xl font-bold text-center mb-8">
+      <div className="max-w-6xl mx-auto flex-1 w-full">
+        <h1 className="text-4xl font-bold text-center mb-8 flex items-center justify-center gap-3">
+          <span className="bg-blue-600 rounded-full p-2 inline-flex">
+            <Swords className="w-7 h-7 text-white" />
+          </span>
           Age of Empires IV Friends Stats
         </h1>
 
@@ -416,32 +416,32 @@ function MainApp() {
         </form>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-600 mb-6">
+        <div className="flex gap-1 bg-gray-800/60 rounded-lg p-1 mb-6">
           <button
-            className={`px-6 py-2 font-semibold transition-colors ${
+            className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'stats'
-                ? 'border-b-2 border-blue-400 text-blue-400'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
             onClick={() => setActiveTab('stats')}
           >
             Stats
           </button>
           <button
-            className={`px-6 py-2 font-semibold transition-colors ${
+            className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'balanced'
-                ? 'border-b-2 border-blue-400 text-blue-400'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
             onClick={() => setActiveTab('balanced')}
           >
             Create Balanced Teams
           </button>
           <button
-            className={`px-6 py-2 font-semibold transition-colors ${
+            className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'coach'
-                ? 'border-b-2 border-blue-400 text-blue-400'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
             onClick={() => setActiveTab('coach')}
           >
@@ -461,28 +461,28 @@ function MainApp() {
         {activeTab === 'stats' && stats && (
           <div className="space-y-8">
             {/* General stats first */}
-            <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center">
-                <Trophy className="mr-2" /> Player Statistics - {currentNickname}
+            <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-400" /> Player Statistics - {currentNickname}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
-                    <Swords className="text-blue-400" />
+                    <Swords className="w-6 h-6 text-blue-400" />
                     <div>
                       <p className="text-gray-400">Win/Loss</p>
                       <p className="text-xl font-semibold">{stats.wins}W - {stats.losses}L</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Users2 className="text-green-400" />
+                    <Users2 className="w-6 h-6 text-green-400" />
                     <div>
                       <p className="text-gray-400">Total Games</p>
                       <p className="text-xl font-semibold">{stats.totalGames}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Swords className="text-purple-400" />
+                    <Flame className="w-6 h-6 text-purple-400" />
                     <div>
                       <p className="text-gray-400">Current Win Streak</p>
                       <p className="text-xl font-semibold">{stats.currentStreak}</p>
@@ -490,7 +490,7 @@ function MainApp() {
                   </div>
                   {/* Max Win Streak */}
                   <div className="flex items-center space-x-3">
-                    <Trophy className="text-green-400" />
+                    <Trophy className="w-6 h-6 text-green-400" />
                     <div>
                       <p className="text-gray-400">Max Win Streak</p>
                       <p className="text-xl font-semibold">{stats.maxWinStreak ?? stats.longestWinStreak}</p>
@@ -507,7 +507,7 @@ function MainApp() {
                     );
                     return (
                       <div className="flex items-center space-x-3">
-                        <Trophy className="text-orange-400" />
+                        <Crown className="w-6 h-6 text-orange-400" />
                         <div>
                           <p className="text-gray-400">Favourite Civ</p>
                           <p className="text-xl font-semibold">{favCiv} <span className="text-gray-400 text-base">({favStats.total} games)</span></p>
@@ -518,48 +518,37 @@ function MainApp() {
                 </div>
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
-                    <Trophy className="text-yellow-400" />
+                    <BarChart2 className="w-6 h-6 text-yellow-400" />
                     <div>
                       <p className="text-gray-400">Win Rate</p>
                       <p className="text-xl font-semibold">{stats.winRate}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Trophy className="text-pink-400" />
+                    <BarChart2 className="w-6 h-6 text-pink-400" />
                     <div>
                       <p className="text-gray-400">Win Rate (Last 10)</p>
                       <p className="text-xl font-semibold">{stats.winRateLast10Games}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Trophy className="text-indigo-400" />
+                    <BarChart2 className="w-6 h-6 text-indigo-400" />
                     <div>
                       <p className="text-gray-400">Win Rate (Last 50)</p>
                       <p className="text-xl font-semibold">{stats.winRateLast50Games}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {/* Changed icon for Avg. Game Length */}
-                    <span className="text-yellow-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
-                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
-                      </svg>
-                    </span>
+                    <Clock className="w-6 h-6 text-yellow-400" />
                     <div>
                       <p className="text-gray-400">Avg. Game Length</p>
                       <p className="text-xl font-semibold">{stats.averageGameLength}</p>
                     </div>
                   </div>
                   {/* Longest Game */}
-                  {'longestGame' in stats && stats.longestGame !== undefined && (
+                  {stats.longestGame !== undefined && (
                     <div className="flex items-center space-x-3">
-                      <span className="text-red-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" strokeWidth="2" fill="none"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v5l3 3" />
-                        </svg>
-                      </span>
+                      <Hourglass className="w-6 h-6 text-red-400" />
                       <div>
                         <p className="text-gray-400">Longest Game</p>
                         <p className="text-xl font-semibold">
@@ -598,14 +587,14 @@ function MainApp() {
             </div>
 
             {/* Civilization Performance */}
-            <div>
+            <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
               <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
               <CivCharts stats={stats} />
             </div>
 
             {/* New: Game Duration Distribution Section */}
             {stats.durationDistribution && (
-              <div className="bg-gray-700 rounded-lg p-6 shadow-xl mt-6">
+              <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
                 <h3 className="text-xl font-semibold mb-2">Game Duration Distribution</h3>
                 <GameDurationChart distribution={{
                   veryShort: stats.durationDistribution.veryShort ?? 0,
@@ -619,23 +608,24 @@ function MainApp() {
 
             {/* New: Top Maps Section */}
             {stats.mapStats && (
-              <div className="bg-gray-700 rounded-lg p-6 shadow-xl mt-6">
+              <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
                 <h3 className="text-xl font-semibold mb-2">Top Maps</h3>
                 <MapBarChart mapStats={stats.mapStats} />
               </div>
             )}
 
-            {/* Win/Loss Distribution */}
-            // <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            //   <div className="bg-gray-700 rounded-lg p-6 shadow-xl">
-            //     <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
-            //     <WinLossChart stats={stats} />
-            //   </div>
-            // </div>
+            {/* Win/Loss Distribution — disabled
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
+                <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
+                <WinLossChart stats={stats} />
+              </div>
+            </div>
+            */}
           </div>
         )}
+        <Footer />
       </div>
-      <Footer />
     </div>
   );
 }

@@ -25,7 +25,7 @@ const CivCharts: React.FC<{ stats: GameStats | null }> = ({ stats }) => {
           { name: 'Losses', value: stat.losses }
         ];
         return (
-          <div key={civ} className="bg-gray-700 rounded-lg p-4 shadow">
+          <div key={civ} className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
             <h4 className="font-semibold mb-2">{civ.replace(/_/g, ' ').toUpperCase()}</h4>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
@@ -43,7 +43,11 @@ const CivCharts: React.FC<{ stats: GameStats | null }> = ({ stats }) => {
                     <Cell key={`cell-${index}`} fill={index === 0 ? '#4ade80' : '#ef4444'} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff', borderRadius: '0.5rem', fontSize: 14 }}
+                  itemStyle={{ color: '#fff' }}
+                  labelStyle={{ color: '#fff' }}
+                />
               </PieChart>
             </ResponsiveContainer>
             <div className="text-sm mt-2">

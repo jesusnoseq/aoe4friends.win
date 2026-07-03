@@ -49,8 +49,12 @@ const GameDurationChart: React.FC<{ distribution?: DurationDistribution }> = ({ 
               <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip />
-          <Legend />
+          <Tooltip
+            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff', borderRadius: '0.5rem', fontSize: 14 }}
+            itemStyle={{ color: '#fff' }}
+            labelStyle={{ color: '#fff' }}
+          />
+          <Legend wrapperStyle={{ color: '#fff', fontSize: 14 }} iconSize={16} />
         </PieChart>
       </ResponsiveContainer>
     </div>
