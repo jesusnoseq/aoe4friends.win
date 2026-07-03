@@ -1,4 +1,4 @@
-import { Game } from "./aoe4worldTypes.request";
+import { Game, GamesResponse } from "./aoe4worldTypes.request";
 import LZString from "lz-string";
 
 // Fetch all games for a profile_id, with paging, and cache in localStorage
@@ -63,6 +63,34 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
     }
   }
   return allGames;
+}
+
+// Fetch the latest N (default 10) game summaries for one or several players
+// using the global /games endpoint, which supports `per_page` and `profile_ids`
+// directly (see https://aoe4world.com/api#games). Games are returned newest-
+// first when ordered by `started_at` (the default), so a single page is enough.
+//
+// The aoe4world API caps `per_page` at 100 and `page` at 20. We clamp `count`
+// accordingly and fetch a single page to minimize requests.
+export async function fetchLatestGames(
+  profileId: number,
+  count: number = 10
+): Promise<Game[]> {
+  const limit = Math.max(1, Math.min(count, 100));
+
+  const params = new URLSearchParams({
+    per_page: String(limit),
+    profile_ids: String(profileId),
+  });
+
+  const url = `https://aoe4world.com/api/v0/games?${params.toString()}`;
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch latest games: ${resp.status}`);
+  }
+  const data: GamesResponse = await resp.json();
+  const games: Game[] = data.games ?? [];
+  return games.slice(0, limit);
 }
 
 // --- CBT (Create Balanced Teams) helpers ---

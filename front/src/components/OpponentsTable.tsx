@@ -99,19 +99,15 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
       ? getSorted(list, tableSort.column, tableSort.direction)
       : [...list].sort((a, b) => b.Stat.games - a.Stat.games);
   return (
-    <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
+    <div className="card p-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Top 20 Enemies</h3>
+        <h3 className="text-lg font-semibold text-parchment-100">Top 20 Enemies</h3>
         <div className="flex gap-2">
           {(['all', 'quickmatch', 'rankedmatch'] as MatchTypeFilter[]).map((key) => (
             <button
               key={key}
               onClick={() => setMatchTypeFilter(key)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                matchTypeFilter === key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+              className={`${matchTypeFilter === key ? 'tab-active' : 'tab-idle'}`}
             >
               {key === 'all' ? 'All' : key === 'quickmatch' ? 'Quick Match' : 'Ranked Match'}
             </button>
@@ -119,12 +115,12 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
         </div>
       </div>
       {list.length === 0 ? (
-        <p className="text-gray-400">No opponent data available.</p>
+        <p className="text-steel-400">No opponent data available.</p>
       ) : (
         <table className="w-full text-left text-sm border-separate border-spacing-y-1 table-fixed">
           <thead>
-            <tr className="bg-gray-700/60">
-              <th className="py-2 px-3 rounded-l-md w-10 text-gray-300">#</th>
+            <tr className="bg-leather-700/60">
+              <th className="py-2 px-3 rounded-l-md w-10 text-parchment-200">#</th>
               <SortableTh label="Name" column="name" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-2/5" />
               <SortableTh label="Games" column="games" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
               <SortableTh label="Your Wins" column="wins" table="opponents" tableSort={tableSort} setTableSort={setTableSort} className="w-16" />
@@ -138,13 +134,13 @@ const OpponentsTable: React.FC<OpponentsTableProps> = ({ stats, tableSort, setTa
               .map((op, idx) => (
                 <tr
                   key={op.Name}
-                  className={`hover:bg-gray-700 transition ${idx % 2 === 0 ? 'bg-gray-800/40' : 'bg-gray-700/40'}`}
+                  className={`hover:bg-leather-700 transition ${idx % 2 === 0 ? 'bg-ink-700/40' : 'bg-leather-800/40'}`}
                 >
-                  <td className="py-2 px-3 font-bold text-blue-300">{idx + 1}</td>
+                  <td className="py-2 px-3 font-bold text-gold-300">{idx + 1}</td>
                   <td className="py-2 px-3 truncate">{op.Name}</td>
                   <td className="py-2 px-3">{op.Stat.games}</td>
-                  <td className="py-2 px-3 text-green-400">{op.Stat.losses}</td>
-                  <td className="py-2 px-3 text-red-400">{op.Stat.wins}</td>
+                  <td className="py-2 px-3 text-moss-400">{op.Stat.losses}</td>
+                  <td className="py-2 px-3 text-oxblood-400">{op.Stat.wins}</td>
                   <td className="py-2 px-3 font-semibold">
                     {op.Stat.games > 0 ? Math.round((op.Stat.losses / op.Stat.games) * 100) : 0}%
                   </td>

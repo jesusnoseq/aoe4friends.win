@@ -1,10 +1,9 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { DurationDistribution } from '../services/aoe4worldTypes.analysis';
+import { DURATION_COLORS, TOOLTIP_STYLE, TOOLTIP_ITEM_STYLE, TOOLTIP_LABEL_STYLE, LEGEND_WRAPPER_STYLE } from '../services/chartTheme';
 
-
-
-const COLORS = ['#60a5fa', '#34d399', '#fbbf24', '#a78bfa', '#f87171'];
+const COLORS = DURATION_COLORS;
 
 const LABELS = [
   { key: 'veryShort', label: 'Very Short (<10m)' },
@@ -24,7 +23,7 @@ const GameDurationChart: React.FC<{ distribution?: DurationDistribution }> = ({ 
 
   // Always show chart, even if some/all values are 0
   if (data.every(d => d.value === 0)) return (
-    <div className="h-32 flex items-center justify-center text-gray-400">
+    <div className="h-32 flex items-center justify-center text-steel-400">
       No duration data available.
     </div>
   );
@@ -50,11 +49,11 @@ const GameDurationChart: React.FC<{ distribution?: DurationDistribution }> = ({ 
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff', borderRadius: '0.5rem', fontSize: 14 }}
-            itemStyle={{ color: '#fff' }}
-            labelStyle={{ color: '#fff' }}
+            contentStyle={TOOLTIP_STYLE}
+            itemStyle={TOOLTIP_ITEM_STYLE}
+            labelStyle={TOOLTIP_LABEL_STYLE}
           />
-          <Legend wrapperStyle={{ color: '#fff', fontSize: 14 }} iconSize={16} />
+          <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} iconSize={16} />
         </PieChart>
       </ResponsiveContainer>
     </div>

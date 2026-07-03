@@ -321,24 +321,24 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-4 sm:p-8 flex flex-col">
+    <div className="min-h-screen bg-ink-900 bg-leather-texture text-parchment-100 p-4 sm:p-8 flex flex-col">
       {/* Loading spinner overlay */}
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <Spinner size={64} className="text-blue-400" />
+          <Spinner size={64} className="text-gold-400" />
         </div>
       )}
       <div className="max-w-6xl mx-auto flex-1 w-full">
-        <h1 className="text-4xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-          <span className="bg-blue-600 rounded-full p-2 inline-flex">
-            <Swords className="w-7 h-7 text-white" />
+        <h1 className="text-4xl font-bold text-center mb-8 flex items-center justify-center gap-3 text-parchment-100">
+          <span className="bg-navy-500 border border-gold-500 rounded-full p-2 inline-flex shadow-glow">
+            <Swords className="w-7 h-7 text-gold-400" />
           </span>
           Age of Empires IV Friends Stats
         </h1>
 
         <form onSubmit={handleSubmit} className="mb-8" autoComplete="off">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-steel-400" />
             <input
               ref={inputRef}
               type="text"
@@ -349,12 +349,12 @@ function MainApp() {
                 if (suggestions.length > 0) setShowSuggestions(true); 
               }}
               placeholder="Enter Profile ID or Nickname"
-              className="w-full pl-10 pr-16 py-3 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400"
+              className="w-full pl-10 pr-16 py-3 bg-leather-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 text-parchment-100 placeholder-steel-500 border border-gold-700/40"
             />
             {/* Recent queries button */}
             <button
               type="button"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-600 hover:bg-gray-500 text-xs px-2 py-1 rounded"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-leather-700 hover:bg-leather-600 text-xs px-2 py-1 rounded text-parchment-200"
               onClick={() => {
                 setShowRecent(prev => {
                   const next = !prev;
@@ -368,26 +368,26 @@ function MainApp() {
             </button>
             {/* Recent queries dropdown */}
             {showRecent && recentQueries.length > 0 && (
-              <ul className="absolute z-20 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto w-64">
+              <ul className="absolute z-20 right-0 mt-1 bg-ink-800 border border-gold-700/50 rounded-lg shadow-lg max-h-60 overflow-y-auto w-64">
                 {recentQueries.map((q) => (
                   <li
                     key={q.profile_id}
-                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-700"
+                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-leather-700"
                     onMouseDown={() => handleRecentClick(q)}
                   >
                     <span className="font-semibold">{q.name}</span>
-                    <span className="ml-2 text-gray-400 text-xs">#{q.profile_id}</span>
+                    <span className="ml-2 text-steel-400 text-xs">#{q.profile_id}</span>
                   </li>
                 ))}
               </ul>
             )}
             {/* Autocomplete dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <ul className="absolute z-10 left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+              <ul className="absolute z-10 left-0 right-0 mt-1 bg-ink-800 border border-gold-700/50 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                 {suggestions.map((player) => (
                   <li
                     key={player.profile_id}
-                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-gray-700"
+                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-leather-700"
                     onMouseDown={() => handleSuggestionClick(player)}
                   >
                     <img
@@ -396,7 +396,7 @@ function MainApp() {
                       className="w-6 h-6 rounded-full mr-3"
                     />
                     <span className="font-semibold">{player.name}</span>
-                    <span className="ml-2 text-gray-400 text-xs">#{player.profile_id}</span>
+                    <span className="ml-2 text-steel-400 text-xs">#{player.profile_id}</span>
                     {player.country && (
                       <span className="ml-2 text-xs">{player.country.toUpperCase()}</span>
                     )}
@@ -405,23 +405,23 @@ function MainApp() {
               </ul>
             )}
           </div>
-          {error && <p className="mt-2 text-red-400">{error}</p>}
+          {error && <p className="mt-2 text-oxblood-400">{error}</p>}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-semibold transition duration-200 disabled:opacity-50"
+            className="w-full mt-4 btn-primary py-3 rounded-lg disabled:opacity-50 transition duration-200"
           >
             {isLoading ? 'Loading...' : 'View Stats'}
           </button>
         </form>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-800/60 rounded-lg p-1 mb-6">
+        <div className="flex gap-1 bg-leather-900/60 rounded-lg p-1 mb-6 border border-gold-700/30">
           <button
             className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'stats'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                ? 'bg-navy-500 text-parchment-100'
+                : 'text-steel-400 hover:text-parchment-200 hover:bg-leather-700'
             }`}
             onClick={() => setActiveTab('stats')}
           >
@@ -430,8 +430,8 @@ function MainApp() {
           <button
             className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'balanced'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                ? 'bg-navy-500 text-parchment-100'
+                : 'text-steel-400 hover:text-parchment-200 hover:bg-leather-700'
             }`}
             onClick={() => setActiveTab('balanced')}
           >
@@ -440,8 +440,8 @@ function MainApp() {
           <button
             className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'coach'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                ? 'bg-navy-500 text-parchment-100'
+                : 'text-steel-400 hover:text-parchment-200 hover:bg-leather-700'
             }`}
             onClick={() => setActiveTab('coach')}
           >
@@ -461,38 +461,38 @@ function MainApp() {
         {activeTab === 'stats' && stats && (
           <div className="space-y-8">
             {/* General stats first */}
-            <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-yellow-400" /> Player Statistics - {currentNickname}
+            <div className="card-pad">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2 text-parchment-100">
+                <Trophy className="w-6 h-6 text-gold-400" /> Player Statistics - {currentNickname}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
-                    <Swords className="w-6 h-6 text-blue-400" />
+                    <Swords className="w-6 h-6 text-gold-400" />
                     <div>
-                      <p className="text-gray-400">Win/Loss</p>
+                      <p className="text-steel-400">Win/Loss</p>
                       <p className="text-xl font-semibold">{stats.wins}W - {stats.losses}L</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Users2 className="w-6 h-6 text-green-400" />
+                    <Users2 className="w-6 h-6 text-moss-400" />
                     <div>
-                      <p className="text-gray-400">Total Games</p>
+                      <p className="text-steel-400">Total Games</p>
                       <p className="text-xl font-semibold">{stats.totalGames}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Flame className="w-6 h-6 text-purple-400" />
+                    <Flame className="w-6 h-6 text-oxblood-400" />
                     <div>
-                      <p className="text-gray-400">Current Win Streak</p>
+                      <p className="text-steel-400">Current Win Streak</p>
                       <p className="text-xl font-semibold">{stats.currentStreak}</p>
                     </div>
                   </div>
                   {/* Max Win Streak */}
                   <div className="flex items-center space-x-3">
-                    <Trophy className="w-6 h-6 text-green-400" />
+                    <Trophy className="w-6 h-6 text-moss-400" />
                     <div>
-                      <p className="text-gray-400">Max Win Streak</p>
+                      <p className="text-steel-400">Max Win Streak</p>
                       <p className="text-xl font-semibold">{stats.maxWinStreak ?? stats.longestWinStreak}</p>
                     </div>
                   </div>
@@ -507,10 +507,10 @@ function MainApp() {
                     );
                     return (
                       <div className="flex items-center space-x-3">
-                        <Crown className="w-6 h-6 text-orange-400" />
+                        <Crown className="w-6 h-6 text-gold-300" />
                         <div>
-                          <p className="text-gray-400">Favourite Civ</p>
-                          <p className="text-xl font-semibold">{favCiv} <span className="text-gray-400 text-base">({favStats.total} games)</span></p>
+                          <p className="text-steel-400">Favourite Civ</p>
+                          <p className="text-xl font-semibold">{favCiv} <span className="text-steel-400 text-base">({favStats.total} games)</span></p>
                         </div>
                       </div>
                     );
@@ -518,39 +518,39 @@ function MainApp() {
                 </div>
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
-                    <BarChart2 className="w-6 h-6 text-yellow-400" />
+                    <BarChart2 className="w-6 h-6 text-gold-400" />
                     <div>
-                      <p className="text-gray-400">Win Rate</p>
+                      <p className="text-steel-400">Win Rate</p>
                       <p className="text-xl font-semibold">{stats.winRate}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <BarChart2 className="w-6 h-6 text-pink-400" />
+                    <BarChart2 className="w-6 h-6 text-gold-300" />
                     <div>
-                      <p className="text-gray-400">Win Rate (Last 10)</p>
+                      <p className="text-steel-400">Win Rate (Last 10)</p>
                       <p className="text-xl font-semibold">{stats.winRateLast10Games}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <BarChart2 className="w-6 h-6 text-indigo-400" />
+                    <BarChart2 className="w-6 h-6 text-moss-400" />
                     <div>
-                      <p className="text-gray-400">Win Rate (Last 50)</p>
+                      <p className="text-steel-400">Win Rate (Last 50)</p>
                       <p className="text-xl font-semibold">{stats.winRateLast50Games}%</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Clock className="w-6 h-6 text-yellow-400" />
+                    <Clock className="w-6 h-6 text-gold-400" />
                     <div>
-                      <p className="text-gray-400">Avg. Game Length</p>
+                      <p className="text-steel-400">Avg. Game Length</p>
                       <p className="text-xl font-semibold">{stats.averageGameLength}</p>
                     </div>
                   </div>
                   {/* Longest Game */}
                   {stats.longestGame !== undefined && (
                     <div className="flex items-center space-x-3">
-                      <Hourglass className="w-6 h-6 text-red-400" />
+                      <Hourglass className="w-6 h-6 text-oxblood-400" />
                       <div>
-                        <p className="text-gray-400">Longest Game</p>
+                        <p className="text-steel-400">Longest Game</p>
                         <p className="text-xl font-semibold">
                           {(() => {
                             const sec = stats.longestGame ?? 0;
@@ -587,15 +587,15 @@ function MainApp() {
             </div>
 
             {/* Civilization Performance */}
-            <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
-              <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
+            <div className="card-pad">
+              <h3 className="text-xl font-semibold mb-4 text-parchment-100">Civilization Performance</h3>
               <CivCharts stats={stats} />
             </div>
 
             {/* New: Game Duration Distribution Section */}
             {stats.durationDistribution && (
-              <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
-                <h3 className="text-xl font-semibold mb-2">Game Duration Distribution</h3>
+              <div className="card-pad">
+                <h3 className="text-xl font-semibold mb-2 text-parchment-100">Game Duration Distribution</h3>
                 <GameDurationChart distribution={{
                   veryShort: stats.durationDistribution.veryShort ?? 0,
                   short: stats.durationDistribution.short ?? 0,
@@ -608,15 +608,15 @@ function MainApp() {
 
             {/* New: Top Maps Section */}
             {stats.mapStats && (
-              <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
-                <h3 className="text-xl font-semibold mb-2">Top Maps</h3>
+              <div className="card-pad">
+                <h3 className="text-xl font-semibold mb-2 text-parchment-100">Top Maps</h3>
                 <MapBarChart mapStats={stats.mapStats} />
               </div>
             )}
 
             {/* Win/Loss Distribution — disabled
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
+              <div className="card-pad">
                 <h3 className="text-xl font-semibold mb-4">Win/Loss Distribution</h3>
                 <WinLossChart stats={stats} />
               </div>
@@ -638,14 +638,14 @@ export default App;
 */
 function Footer() {
   return (
-    <footer className="mt-16 text-center text-gray-400 text-sm">
+    <footer className="mt-16 text-center text-steel-400 text-sm">
       <div>
         Data powered by{' '}
         <a
           href="https://aoe4world.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-blue-300"
+          className="underline hover:text-gold-300"
         >
           aoe4world.com
         </a>
@@ -655,7 +655,7 @@ function Footer() {
           href="https://jesusnoseq.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-blue-300"
+          className="underline hover:text-gold-300"
         >
           jesusnoseq
         </a>

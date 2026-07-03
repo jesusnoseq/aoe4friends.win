@@ -1,5 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { WIN_LOSS_COLORS, TOOLTIP_STYLE, TOOLTIP_ITEM_STYLE, TOOLTIP_LABEL_STYLE } from '../services/chartTheme';
 
 interface CivStats {
   [civ: string]: {
@@ -25,8 +26,12 @@ const CivCharts: React.FC<{ stats: GameStats | null }> = ({ stats }) => {
           { name: 'Losses', value: stat.losses }
         ];
         return (
-          <div key={civ} className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
-            <h4 className="font-semibold mb-2">{civ.replace(/_/g, ' ').toUpperCase()}</h4>
+          <div key={civ} className="card p-4">
+            <h4 className="font-semibold mb-2 text-parchment-100">
+              <span className="inline-block bg-leather-800 border-y border-gold-700/40 px-2 py-1 -mx-2 rounded">
+                {civ.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+              </span>
+            </h4>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
@@ -35,22 +40,22 @@ const CivCharts: React.FC<{ stats: GameStats | null }> = ({ stats }) => {
                   cy="50%"
                   innerRadius={40}
                   outerRadius={60}
-                  fill="#8884d8"
+                  fill={WIN_LOSS_COLORS.losses}
                   paddingAngle={5}
                   dataKey="value"
                 >
                   {civData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={index === 0 ? '#4ade80' : '#ef4444'} />
+                    <Cell key={`cell-${index}`} fill={index === 0 ? WIN_LOSS_COLORS.wins : WIN_LOSS_COLORS.losses} />
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff', borderRadius: '0.5rem', fontSize: 14 }}
-                  itemStyle={{ color: '#fff' }}
-                  labelStyle={{ color: '#fff' }}
+                  contentStyle={TOOLTIP_STYLE}
+                  itemStyle={TOOLTIP_ITEM_STYLE}
+                  labelStyle={TOOLTIP_LABEL_STYLE}
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="text-sm mt-2">
+            <div className="text-sm mt-2 text-parchment-200">
               Games: {stat.total} | Win Rate: {stat.total > 0 ? Math.round((stat.wins / stat.total) * 100) : 0}%
             </div>
           </div>

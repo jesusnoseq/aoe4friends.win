@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, Trophy } from 'lucide-react';
+import { X, Users, Trophy, Shield, ShieldCheck, ShieldAlert, Bot } from 'lucide-react';
 import { fetchPlayerProfileForCBT, searchPlayersForCBT } from '../services/aoe4worldRequests';
 import { type RatingMode, type CBTPlayer, type TeamsState, type BalanceAlgorithm, getBalanceElo, teamElo, computeTeamScore, createTeams, isTeamBalanced, BALANCE_ALGORITHMS, STRENGTH_COEFFICIENT } from '../services/balancedTeamsLogic';
 import Spinner from './Spinner';
@@ -135,7 +135,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
   function ratingCell(r: number | undefined): React.ReactNode {
     return r !== undefined
       ? <span>{r}</span>
-      : <span className="text-gray-500 text-xs">N/A</span>;
+      : <span className="text-steel-500 text-xs">N/A</span>;
   }
 
   const showSearch = searchQuery.trim().length > 0;
@@ -165,25 +165,25 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6">
 
           {/* Left: Player selection */}
-          <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-400" /> Add Players
+          <div className="card p-4">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-parchment-100">
+              <Users className="w-5 h-5 text-gold-400" /> Add Players
             </h3>
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search player by name..."
-              className="w-full px-3 py-2 bg-gray-700 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+              className="w-full px-3 py-2 bg-leather-800 rounded-lg text-sm text-parchment-100 placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-gold-500 mb-3 border border-gold-700/40"
             />
             {showSearch && searchLoading && (
-              <p className="text-gray-400 text-sm px-1 mb-2">Searching...</p>
+              <p className="text-steel-400 text-sm px-1 mb-2">Searching...</p>
             )}
             {showSearch && !searchLoading && searchResults.length === 0 && (
-              <p className="text-gray-400 text-sm px-1 mb-2">No players found.</p>
+              <p className="text-steel-400 text-sm px-1 mb-2">No players found.</p>
             )}
             {!showSearch && allies.length > 0 && (
-              <p className="text-gray-500 text-xs px-1 mb-2">Top teammates - click + to add</p>
+              <p className="text-steel-500 text-xs px-1 mb-2">Top teammates - click + to add</p>
             )}
             <ul className="space-y-1 max-h-80 overflow-y-auto pr-1">
               {leftList.map((item, i) => {
@@ -192,10 +192,10 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                 const isLoading = pid !== undefined && loadingIds.has(pid);
                 const disabled = alreadyIn || maxReached || isLoading || pid === undefined;
                 return (
-                  <li key={pid ?? `search-${i}`} className="flex items-center justify-between px-3 py-2 rounded hover:bg-gray-700">
+                  <li key={pid ?? `search-${i}`} className="flex items-center justify-between px-3 py-2 rounded hover:bg-leather-700">
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-sm truncate block">{item.name}</span>
-                      <span className="text-xs text-gray-400">{item.subtitle}</span>
+                      <span className="text-xs text-steel-400">{item.subtitle}</span>
                     </div>
                     <button
                       onClick={() => pid !== undefined && addPlayer(pid, item.name)}
@@ -203,23 +203,23 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                       title={alreadyIn ? 'Already in roster' : maxReached ? 'Roster full (8/8)' : 'Add to roster'}
                       className={`ml-3 w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full text-sm font-bold transition-colors ${
                         alreadyIn
-                          ? 'bg-gray-600 text-green-400 cursor-default'
+                          ? 'bg-leather-700 text-moss-400 cursor-default'
                           : isLoading
-                            ? 'bg-gray-600 text-gray-400 cursor-wait'
+                            ? 'bg-leather-700 text-steel-400 cursor-wait'
                             : disabled
-                              ? 'bg-gray-700 text-gray-600 cursor-not-allowed'
-                              : 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
+                              ? 'bg-leather-800 text-steel-500 cursor-not-allowed'
+                              : 'bg-navy-500 hover:bg-navy-400 text-parchment-100 cursor-pointer'
                       }`}
                     >
                       {isLoading ? (
-                        <Spinner size={12} className="text-gray-400" />
+                        <Spinner size={12} className="text-steel-400" />
                       ) : alreadyIn ? '✓' : '+'}
                     </button>
                   </li>
                 );
               })}
               {!showSearch && allies.length === 0 && (
-                <li className="text-gray-500 text-sm px-3 py-4 text-center">
+                <li className="text-steel-500 text-sm px-3 py-4 text-center">
                   Load a player in the Stats tab to see their teammates here, or search above.
                 </li>
               )}
@@ -227,33 +227,33 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
           </div>
 
           {/* Right: Roster */}
-          <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40 flex flex-col">
-            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" /> Match Roster
-              <span className={`ml-auto text-sm font-normal ${maxReached ? 'text-red-400' : 'text-gray-400'}`}>
+          <div className="card p-4 flex flex-col">
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-parchment-100">
+              <Trophy className="w-5 h-5 text-gold-400" /> Match Roster
+              <span className={`ml-auto text-sm font-normal ${maxReached ? 'text-oxblood-400' : 'text-steel-400'}`}>
                 {roster.length}/8
               </span>
             </h3>
             {roster.length === 0 ? (
-              <p className="text-gray-500 text-sm flex-1 py-4 text-center">
+              <p className="text-steel-500 text-sm flex-1 py-4 text-center">
                 No players added yet. Use the panel on the left.
               </p>
             ) : (
               <div className="overflow-x-auto flex-1">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-gray-400 border-b border-gray-700 text-xs bg-gray-700/40">
-                      <th className="text-left py-2 pr-3 text-gray-300">Name</th>
-                      <th className="text-center py-2 px-1 text-gray-300">#</th>
+                    <tr className="text-steel-400 border-b border-gold-700/40 text-xs bg-leather-700/40">
+                      <th className="text-left py-2 pr-3 text-parchment-200">Name</th>
+                      <th className="text-center py-2 px-1 text-parchment-200">#</th>
                       {RATING_MODES.map(m => (
                         <th
                           key={m.key}
                           onClick={() => setBalanceMode(m.key)}
                           title={`Balance by ${m.label}`}
-                          className={`text-center py-2 px-1 cursor-pointer select-none rounded transition-colors whitespace-nowrap hover:text-white ${
+                          className={`text-center py-2 px-1 cursor-pointer select-none rounded transition-colors whitespace-nowrap hover:text-parchment-100 ${
                             balanceMode === m.key
-                              ? 'text-blue-400 font-bold'
-                              : 'text-gray-400'
+                              ? 'text-gold-400 font-bold'
+                              : 'text-steel-400'
                           }`}
                         >
                           {m.label}
@@ -264,13 +264,13 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                   </thead>
                   <tbody>
                     {roster.map(player => (
-                      <tr key={player.profile_id} className="border-b border-gray-700 hover:bg-gray-700">
+                      <tr key={player.profile_id} className="border-b border-gold-700/30 hover:bg-leather-700">
                         <td className="py-2 pr-3 font-medium">{player.name}</td>
-                        <td className="text-center px-1 text-gray-400 text-xs">{player.profile_id}</td>
+                        <td className="text-center px-1 text-steel-400 text-xs">{player.profile_id}</td>
                         {RATING_MODES.map(m => (
                           <td
                             key={m.key}
-                            className={`text-center px-1 ${balanceMode === m.key ? 'text-blue-300 font-semibold' : ''}`}
+                            className={`text-center px-1 ${balanceMode === m.key ? 'text-gold-300 font-semibold' : ''}`}
                           >
                             {ratingCell(player.ratings[m.key])}
                           </td>
@@ -278,7 +278,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                         <td className="text-center pl-2">
                           <button
                             onClick={() => removePlayer(player.profile_id)}
-                            className="text-gray-500 hover:text-red-400 transition-colors"
+                            className="text-steel-500 hover:text-oxblood-400 transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -289,16 +289,16 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                 </table>
               </div>
             )}
-            <p className="mt-3 text-xs text-gray-500">
+            <p className="mt-3 text-xs text-steel-500">
               Click a column header to set the ELO used for balancing.{' '}
-              <span className="text-blue-400">
+              <span className="text-gold-400">
                 Active: {RATING_MODES.find(m => m.key === balanceMode)?.label}
               </span>
             </p>
             <button
               onClick={handleCreate}
               disabled={roster.length < 2}
-              className="mt-4 w-full bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed py-2 rounded-lg font-semibold transition-colors"
+              className="mt-4 w-full bg-navy-500 hover:bg-navy-400 disabled:opacity-40 disabled:cursor-not-allowed py-2 rounded-lg font-semibold transition-colors text-parchment-100"
             >
               Create Balanced Teams
             </button>
@@ -342,12 +342,12 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
     algorithm === 'raw-elo'      ? eloFairness(eloDiff) :
     algorithm === 'strength-sum' ? probFairness(pStrSum1) :
                                    probFairness(pStrAdv1);
-  const fairnessStyles: Record<Fairness, { bar: string; badge: string; label: string; icon: string }> = {
-    'very-balanced': { bar: 'bg-green-900 text-green-300',   badge: 'bg-green-700 text-green-200',   label: 'Very Balanced', icon: '✅' },
-    'balanced':      { bar: 'bg-teal-900 text-teal-300',     badge: 'bg-teal-700 text-teal-200',     label: 'Balanced',      icon: '🟢' },
-    'slight-edge':   { bar: 'bg-yellow-900 text-yellow-300', badge: 'bg-yellow-700 text-yellow-200', label: 'Slight Edge',   icon: '🟡' },
-    'favored':       { bar: 'bg-orange-900 text-orange-300', badge: 'bg-orange-700 text-orange-200', label: 'Favored',       icon: '🟠' },
-    'one-sided':     { bar: 'bg-red-900 text-red-300',       badge: 'bg-red-700 text-red-200',       label: 'One-Sided',     icon: '🔴' },
+  const fairnessStyles: Record<Fairness, { bar: string; badge: string; label: string; icon: React.ReactNode }> = {
+    'very-balanced': { bar: 'bg-moss-600 text-parchment-100', badge: 'bg-moss-500 text-ink-900', label: 'Very Balanced', icon: <ShieldCheck className="w-4 h-4 inline" /> },
+    'balanced':      { bar: 'bg-moss-500 text-ink-900',       badge: 'bg-moss-600 text-parchment-100', label: 'Balanced',      icon: <Shield className="w-4 h-4 inline" /> },
+    'slight-edge':   { bar: 'bg-gold-700 text-parchment-100', badge: 'bg-gold-600 text-ink-900',       label: 'Slight Edge',   icon: <Shield className="w-4 h-4 inline" /> },
+    'favored':       { bar: 'bg-gold-600 text-ink-900',       badge: 'bg-gold-700 text-parchment-100', label: 'Favored',       icon: <ShieldAlert className="w-4 h-4 inline" /> },
+    'one-sided':     { bar: 'bg-oxblood-600 text-parchment-100', badge: 'bg-oxblood-500 text-parchment-100', label: 'One-Sided', icon: <ShieldAlert className="w-4 h-4 inline" /> },
   };
   const fs = fairnessStyles[fairness];
 
@@ -363,8 +363,8 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
     const strengthSum   = computeTeamScore(team, balanceMode, 'strength-sum');
     const strengthAdv   = computeTeamScore(team, balanceMode, 'strength-std-max');
     return (
-      <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40 flex flex-col">
-        <h3 className="text-lg font-bold mb-4 text-center">{label}</h3>
+      <div className="card p-4 flex flex-col">
+        <h3 className="text-lg font-bold mb-4 text-center text-parchment-100 border-b border-gold-700/40 pb-2">{label}</h3>
         <ul className="space-y-2 flex-1">
           {team.map(player => {
             const elo      = getBalanceElo(player, balanceMode);
@@ -374,36 +374,36 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                 key={player.profile_id}
                 onClick={() => movePlayer(player, teamKey)}
                 title="Click to move to the other team"
-                className="flex items-center justify-between px-3 py-2 rounded bg-gray-700 hover:bg-blue-900 cursor-pointer transition-colors"
+                className="flex items-center justify-between px-3 py-2 rounded bg-leather-800 hover:bg-gold-700/40 cursor-pointer transition-colors border border-gold-700/30"
               >
                 <span className="font-medium text-sm flex items-center gap-2">
-                  {player.isAI && <span title={player.aiDifficulty}>🤖</span>}
+                  {player.isAI && <Bot className="w-4 h-4 text-steel-400" />}
                   <span>{player.name}</span>
                 </span>
                 {!player.isAI && (
                   <span className="flex items-center gap-2 ml-3 shrink-0">
-                    <span className="text-sm text-blue-300">{elo}</span>
-                    <span className="text-xs text-gray-400">({strength.toFixed(2)})</span>
+                    <span className="text-sm text-gold-300">{elo}</span>
+                    <span className="text-xs text-steel-400">({strength.toFixed(2)})</span>
                   </span>
                 )}
               </li>
             );
           })}
           {team.length === 0 && (
-            <li className="text-gray-500 text-sm text-center py-4">— empty —</li>
+            <li className="text-steel-500 text-sm text-center py-4">— empty —</li>
           )}
         </ul>
-        <div className="mt-4 border-t border-gray-700 pt-3 space-y-1 text-sm">
+        <div className="mt-4 border-t border-gold-700/40 pt-3 space-y-1 text-sm">
           <div className="flex justify-between">
-            <span className="text-gray-400">Total ELO</span>
+            <span className="text-steel-400">Total ELO</span>
             <span className="font-bold">{teamElo(team, balanceMode)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">Strength sum</span>
+            <span className="text-steel-400">Strength sum</span>
             <span className="font-bold">{strengthSum.toFixed(3)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-400">Strength+Std/Max</span>
+            <span className="text-steel-400">Strength+Std/Max</span>
             <span className="font-bold">{strengthAdv.toFixed(3)}</span>
           </div>
         </div>
@@ -416,10 +416,10 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
       {/* Status bar */}
       <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${fs.bar}`}>
         <div className="flex flex-wrap items-center gap-3">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${fs.badge}`}>
+          <span className={`px-2 py-0.5 rounded text-xs font-bold flex items-center gap-1 ${fs.badge}`}>
             {fs.icon} {fs.label}
           </span>
-          {teams.usedAI && <span className="text-orange-400 text-xs">🤖 AI included</span>}
+          {teams.usedAI && <span className="text-gold-300 text-xs flex items-center gap-1"><Bot className="w-4 h-4" /> AI included</span>}
           <span className="text-xs font-normal opacity-70 ml-auto">Click player to swap teams</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs font-normal opacity-90">
@@ -431,17 +431,13 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
 
       {/* Algorithm switcher */}
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-xs text-gray-400 mr-1">Method:</span>
+        <span className="text-xs text-steel-400 mr-1">Method:</span>
         {BALANCE_ALGORITHMS.map(algo => (
           <button
             key={algo.key}
             onClick={() => handleSwitchAlgorithm(algo.key)}
             title={algo.description}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-              algorithm === algo.key
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
+            className={`${algorithm === algo.key ? 'tab-active' : 'tab-idle'}`}
           >
             {algo.label}
           </button>
@@ -456,13 +452,13 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
       <div className="flex gap-3 justify-end">
         <button
           onClick={handleReset}
-          className="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg font-semibold transition-colors"
+          className="px-6 py-2 bg-leather-700 hover:bg-leather-600 text-parchment-100 rounded-lg font-semibold transition-colors"
         >
           ← Edit Roster
         </button>
         <button
           onClick={() => handleCreate(algorithm)}
-          className="px-6 py-2 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition-colors"
+          className="px-6 py-2 bg-navy-500 hover:bg-navy-400 text-parchment-100 rounded-lg font-semibold transition-colors"
         >
           Recreate Teams
         </button>

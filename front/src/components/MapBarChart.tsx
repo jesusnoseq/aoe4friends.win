@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { MAP_SERIES_COLORS, TOOLTIP_STYLE, TOOLTIP_ITEM_STYLE, TOOLTIP_LABEL_STYLE, AXIS_TICK_STYLE, AXIS_LINE_STYLE, LEGEND_WRAPPER_STYLE } from '../services/chartTheme';
 
 interface MapStats {
   [map: string]: {
@@ -9,11 +10,7 @@ interface MapStats {
   };
 }
 
-const COLORS = {
-  games: '#60a5fa',
-  wins: '#4ade80',
-  losses: '#ef4444',
-};
+const COLORS = MAP_SERIES_COLORS;
 
 const MapBarChart: React.FC<{ mapStats?: MapStats }> = ({ mapStats }) => {
   if (!mapStats) return null;
@@ -37,25 +34,25 @@ const MapBarChart: React.FC<{ mapStats?: MapStats }> = ({ mapStats }) => {
         <BarChart data={data} layout="vertical" margin={{ left: 40, right: 20, top: 20, bottom: 20 }}>
           <XAxis
             type="number"
-            tick={{ fontSize: 14, fill: '#fff', fontWeight: 600 }}
-            axisLine={{ stroke: '#fff' }}
-            tickLine={{ stroke: '#fff' }}
+            tick={AXIS_TICK_STYLE}
+            axisLine={AXIS_LINE_STYLE}
+            tickLine={AXIS_LINE_STYLE}
           />
           <YAxis
             dataKey="map"
             type="category"
             width={140}
-            tick={{ fontSize: 14, fill: '#fff', fontWeight: 600 }}
-            axisLine={{ stroke: '#fff' }}
-            tickLine={{ stroke: '#fff' }}
+            tick={AXIS_TICK_STYLE}
+            axisLine={AXIS_LINE_STYLE}
+            tickLine={AXIS_LINE_STYLE}
           />
           <Tooltip
-            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff', borderRadius: '0.5rem', fontSize: 14, fontWeight: 600 }}
-            labelStyle={{ color: '#fff', fontSize: 14, fontWeight: 600 }}
-            itemStyle={{ color: '#fff', fontSize: 14, fontWeight: 600 }}
+            contentStyle={{ ...TOOLTIP_STYLE, fontWeight: 600 }}
+            labelStyle={{ ...TOOLTIP_LABEL_STYLE, fontWeight: 600 }}
+            itemStyle={{ ...TOOLTIP_ITEM_STYLE, fontWeight: 600 }}
           />
           <Legend
-            wrapperStyle={{ color: '#fff', fontSize: 14, fontWeight: 600 }}
+            wrapperStyle={LEGEND_WRAPPER_STYLE}
             iconSize={16}
           />
           <Bar dataKey="games" fill={COLORS.games} name="Games" />

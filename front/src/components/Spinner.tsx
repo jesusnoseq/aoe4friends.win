@@ -5,7 +5,7 @@ interface SpinnerProps {
   className?: string;
 }
 
-const Spinner: React.FC<SpinnerProps> = ({ size = 16, className = 'text-blue-400' }) => (
+const Spinner: React.FC<SpinnerProps> = ({ size = 16, className = 'text-gold-400' }) => (
   <svg
     className={`animate-spin ${className}`}
     style={{ width: size, height: size }}

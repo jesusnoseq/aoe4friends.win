@@ -21,8 +21,8 @@ const SortableTh: React.FC<SortableThProps> = ({ label, column, table, tableSort
   const active = tableSort.table === table && tableSort.column === column;
   return (
     <th
-      className={`py-2 px-3 cursor-pointer select-none text-gray-300 transition-colors hover:bg-gray-700 ${
-        active ? 'text-blue-400 font-semibold' : 'text-gray-300'
+      className={`py-2 px-3 cursor-pointer select-none text-parchment-200 transition-colors hover:bg-leather-700 ${
+        active ? 'text-gold-400 font-semibold' : 'text-parchment-200'
       } ${className || ''}`}
       onClick={() => {
         setTableSort(prev => {
