@@ -37,7 +37,7 @@ const MapBarChart: React.FC<{ mapStats?: MapStats }> = ({ mapStats }) => {
         <BarChart data={data} layout="vertical" margin={{ left: 40, right: 20, top: 20, bottom: 20 }}>
           <XAxis
             type="number"
-            tick={{ fontSize: 16, fill: '#fff', fontWeight: 600 }}
+            tick={{ fontSize: 14, fill: '#fff', fontWeight: 600 }}
             axisLine={{ stroke: '#fff' }}
             tickLine={{ stroke: '#fff' }}
           />
@@ -45,18 +45,18 @@ const MapBarChart: React.FC<{ mapStats?: MapStats }> = ({ mapStats }) => {
             dataKey="map"
             type="category"
             width={140}
-            tick={{ fontSize: 16, fill: '#fff', fontWeight: 600 }}
+            tick={{ fontSize: 14, fill: '#fff', fontWeight: 600 }}
             axisLine={{ stroke: '#fff' }}
             tickLine={{ stroke: '#fff' }}
           />
           <Tooltip
-            contentStyle={{ backgroundColor: '#222', border: '1px solid #444', color: '#fff', fontSize: 16, fontWeight: 600 }}
-            labelStyle={{ color: '#fff', fontSize: 16, fontWeight: 600 }}
-            itemStyle={{ color: '#fff', fontSize: 16, fontWeight: 600 }}
+            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#fff', borderRadius: '0.5rem', fontSize: 14, fontWeight: 600 }}
+            labelStyle={{ color: '#fff', fontSize: 14, fontWeight: 600 }}
+            itemStyle={{ color: '#fff', fontSize: 14, fontWeight: 600 }}
           />
           <Legend
-            wrapperStyle={{ color: '#fff', fontSize: 16, fontWeight: 600 }}
-            iconSize={18}
+            wrapperStyle={{ color: '#fff', fontSize: 14, fontWeight: 600 }}
+            iconSize={16}
           />
           <Bar dataKey="games" fill={COLORS.games} name="Games" />
           <Bar dataKey="wins" fill={COLORS.wins} name="Wins" />
