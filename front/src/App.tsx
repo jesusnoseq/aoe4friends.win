@@ -437,7 +437,7 @@ function MainApp() {
           >
             Create Balanced Teams
           </button>
-          <button
+           { /*<button
             className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'coach'
                 ? 'bg-blue-600 text-white'
@@ -446,7 +446,7 @@ function MainApp() {
             onClick={() => setActiveTab('coach')}
           >
             AI Coach (BETA)
-          </button>
+          </button>*/}
         </div>
 
         {activeTab === 'coach' && <AICoach />}
