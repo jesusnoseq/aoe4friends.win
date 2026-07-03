@@ -54,8 +54,9 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
   }
   try {
     localStorage.setItem(cacheKey, LZString.compress(JSON.stringify(allGames)));
-  } catch (e: any) {
-    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+  } catch (e: unknown) {
+    if (e instanceof DOMException &&
+      (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
       console.warn('localStorage quota exceeded, not caching games.');
     } else {
       throw e;
@@ -81,18 +82,33 @@ export interface CBTPlayerProfile {
   };
 }
 
-function parseCBTProfile(data: any): CBTPlayerProfile {
+interface RawPlayerData {
+  profile_id: number;
+  name: string;
+  leaderboards?: Record<string, { rating?: number } | undefined>;
+  modes?: Record<string, { rating?: number } | undefined>;
+  [key: string]: unknown;
+}
+
+function parseCBTProfile(raw: RawPlayerData): CBTPlayerProfile {
+  const data = raw as Record<string, unknown>;
   const getRating = (...keys: string[]): number | undefined => {
     for (const key of keys) {
-      if (data[key]?.rating !== undefined) return data[key].rating;
-      if (data.leaderboards?.[key]?.rating !== undefined) return data.leaderboards[key].rating;
-      if (data.modes?.[key]?.rating !== undefined) return data.modes[key].rating;
+      const direct = data[key];
+      if (direct && typeof direct === 'object' && 'rating' in (direct as object)) {
+        const r = (direct as { rating?: number }).rating;
+        if (r !== undefined) return r;
+      }
+      const lb = raw.leaderboards?.[key];
+      if (lb?.rating !== undefined) return lb.rating;
+      const md = raw.modes?.[key];
+      if (md?.rating !== undefined) return md.rating;
     }
     return undefined;
   };
   return {
-    profile_id: data.profile_id,
-    name: data.name,
+    profile_id: raw.profile_id,
+    name: raw.name,
     ratings: {
       rm_1v1: getRating('rm_1v1', 'rm_1v1_elo', 'rm_solo'),
       qm_1v1: getRating('qm_1v1', 'qm_solo'),
@@ -120,7 +136,7 @@ export async function searchPlayersForCBT(
   );
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.players || []).map((p: any) => ({
+  return ((data.players as Array<{ profile_id: number; name: string; rating?: number }>) || []).map((p) => ({
     profile_id: p.profile_id,
     name: p.name,
     rating: p.rating,

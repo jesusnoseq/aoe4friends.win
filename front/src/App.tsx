@@ -12,6 +12,7 @@ import GameDurationChart from './components/GameDurationChart';
 import MapBarChart from './components/MapBarChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
 import BalancedTeams from './components/BalancedTeams';
+import AICoach from './components/AICoach';
 
 interface GameStats {
   wins: number;
@@ -90,7 +91,7 @@ function MainApp() {
   const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
   const [showRecent, setShowRecent] = useState<boolean>(false);
   const [currentNickname, setCurrentNickname] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'stats' | 'balanced'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'balanced' | 'coach'>('stats');
   const navigate = useNavigate();
   const { profileIdParam } = useParams();
 
@@ -436,7 +437,19 @@ function MainApp() {
           >
             Create Balanced Teams
           </button>
+          <button
+            className={`px-6 py-2 font-semibold transition-colors ${
+              activeTab === 'coach'
+                ? 'border-b-2 border-blue-400 text-blue-400'
+                : 'text-gray-400 hover:text-white'
+            }`}
+            onClick={() => setActiveTab('coach')}
+          >
+            AI Coach (BETA)
+          </button>
         </div>
+
+        {activeTab === 'coach' && <AICoach />}
 
         {activeTab === 'balanced' && (
           <BalancedTeams

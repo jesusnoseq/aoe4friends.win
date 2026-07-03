@@ -15,14 +15,16 @@ interface GameStats {
   allies: AllyOpponent[];
 }
 
+interface TableSortState {
+  table: 'allies' | 'opponents';
+  column: 'name' | 'games' | 'wins' | 'losses' | 'winrate';
+  direction: 'asc' | 'desc';
+}
+
 interface AlliesTableProps {
   stats: GameStats | null;
-  tableSort: {
-    table: 'allies' | 'opponents';
-    column: string;
-    direction: 'asc' | 'desc';
-  };
-  setTableSort: React.Dispatch<React.SetStateAction<any>>;
+  tableSort: TableSortState;
+  setTableSort: React.Dispatch<React.SetStateAction<TableSortState>>;
   getSorted: (list: AllyOpponent[], column: string, direction: string) => AllyOpponent[];
   games?: Game[];
   profileId?: number;
