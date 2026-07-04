@@ -12,6 +12,7 @@ import GameDurationChart from './components/GameDurationChart';
 import MapBarChart from './components/MapBarChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
 import BalancedTeams from './components/BalancedTeams';
+import BalanceChecker from './components/BalanceChecker';
 import AICoach from './components/AICoach';
 import Spinner from './components/Spinner';
 
@@ -92,7 +93,7 @@ function MainApp() {
   const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
   const [showRecent, setShowRecent] = useState<boolean>(false);
   const [currentNickname, setCurrentNickname] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'stats' | 'balanced' | 'coach'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'balanced' | 'checker' | 'coach'>('stats');
   const navigate = useNavigate();
   const { profileIdParam } = useParams();
 
@@ -438,6 +439,16 @@ function MainApp() {
           >
             Create Balanced Teams
           </button>
+          <button
+            className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
+              activeTab === 'checker'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            }`}
+            onClick={() => setActiveTab('checker')}
+          >
+            Balance Checker
+          </button>
            { /*<button
             className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'coach'
@@ -451,6 +462,8 @@ function MainApp() {
         </div>
 
         {activeTab === 'coach' && <AICoach />}
+
+        {activeTab === 'checker' && <BalanceChecker />}
 
         {activeTab === 'balanced' && (
           <BalancedTeams

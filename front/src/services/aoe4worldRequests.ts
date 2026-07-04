@@ -1,6 +1,7 @@
 import { Game } from "./aoe4worldTypes.request";
 import LZString from "lz-string";
 import { API_BASE_URL } from "./apiConfig";
+import { type CBTPlayer, type RatingMode } from "./balancedTeamsLogic";
 
 // Fetch all games for a profile_id, with paging, and cache in localStorage
 export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
@@ -127,6 +128,87 @@ export async function fetchPlayerProfileForCBT(profileId: number): Promise<CBTPl
   const res = await fetch(`${API_BASE_URL}/v0/players/${profileId}`);
   if (!res.ok) throw new Error(`Failed to fetch player ${profileId}`);
   return parseCBTProfile(await res.json());
+}
+
+// --- Balance Checker helpers ---
+
+// The single-game endpoint returns team members as flat player objects,
+// NOT wrapped in { player: {...} } like the paginated games list.
+interface SingleGamePlayer {
+  profile_id: number;
+  name: string;
+  result?: string | null;
+  rating?: number | null;
+  mmr?: number | null;
+}
+
+interface SingleGameResponse {
+  game_id: number;
+  map: string;
+  kind?: string;
+  leaderboard?: string;
+  teams: SingleGamePlayer[][];
+}
+
+export interface CheckedGame {
+  game_id: number;
+  map: string;
+  leaderboard: string;
+  mode: RatingMode;
+  team1: CBTPlayer[];
+  team2: CBTPlayer[];
+  team1Won?: boolean;
+}
+
+// Accepts a plain game id or an aoe4world game URL like
+// https://aoe4world.com/players/3995534-jesusnoseq/games/241337674?sig=...
+export function parseGameId(input: string): number | null {
+  const trimmed = input.trim();
+  if (/^\d+$/.test(trimmed)) return Number(trimmed);
+  const match = trimmed.match(/games\/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+function leaderboardToRatingMode(leaderboard: string, teamSize: number): RatingMode {
+  const bySize: RatingMode = teamSize <= 1 ? 'rm_1v1' : teamSize === 2 ? 'rm_2v2' : teamSize === 3 ? 'rm_3v3' : 'rm_4v4';
+  if (leaderboard === 'rm_solo' || leaderboard === 'rm_1v1') return 'rm_1v1';
+  if (leaderboard === 'qm_solo' || leaderboard === 'qm_1v1') return 'qm_1v1';
+  const prefixes: RatingMode[] = ['rm_2v2', 'qm_2v2', 'rm_3v3', 'qm_3v3', 'rm_4v4', 'qm_4v4'];
+  for (const p of prefixes) {
+    if (leaderboard.startsWith(p)) return p;
+  }
+  return bySize;
+}
+
+export async function fetchGameForBalanceCheck(gameId: number): Promise<CheckedGame> {
+  const res = await fetch(`${API_BASE_URL}/v0/games/${gameId}`);
+  if (!res.ok) throw new Error(`Game ${gameId} not found`);
+  const data: SingleGameResponse = await res.json();
+  if (!Array.isArray(data.teams) || data.teams.length < 2) {
+    throw new Error(`Game ${gameId} has no team data`);
+  }
+
+  const leaderboard = data.leaderboard || data.kind || '';
+  const teamSize = Math.max(...data.teams.map(t => t.length));
+  const mode = leaderboardToRatingMode(leaderboard, teamSize);
+
+  const toCBTPlayer = (p: SingleGamePlayer): CBTPlayer => ({
+    profile_id: p.profile_id,
+    name: p.name,
+    ratings: { [mode]: p.rating ?? p.mmr ?? undefined },
+  });
+
+  const team1Result = data.teams[0].find(p => p.result === 'win' || p.result === 'loss')?.result;
+
+  return {
+    game_id: data.game_id,
+    map: data.map,
+    leaderboard,
+    mode,
+    team1: data.teams[0].map(toCBTPlayer),
+    team2: data.teams[1].map(toCBTPlayer),
+    team1Won: team1Result === undefined ? undefined : team1Result === 'win',
+  };
 }
 
 export async function searchPlayersForCBT(

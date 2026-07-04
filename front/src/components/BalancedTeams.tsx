@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Users, Trophy } from 'lucide-react';
 import { fetchPlayerProfileForCBT, searchPlayersForCBT } from '../services/aoe4worldRequests';
-import { type RatingMode, type CBTPlayer, type TeamsState, type BalanceAlgorithm, getBalanceElo, teamElo, computeTeamScore, createTeams, isTeamBalanced, BALANCE_ALGORITHMS, STRENGTH_COEFFICIENT } from '../services/balancedTeamsLogic';
+import { type RatingMode, type CBTPlayer, type TeamsState, type BalanceAlgorithm, teamElo, createTeams, isTeamBalanced, BALANCE_ALGORITHMS } from '../services/balancedTeamsLogic';
 import Spinner from './Spinner';
+import TeamsDisplay from './TeamsDisplay';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -311,147 +312,35 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
   // ── Teams phase ───────────────────────────────────────────────────────────────────
   if (!teams) return null;
 
-  const eloDiff         = Math.abs(teamElo(teams.team1, balanceMode) - teamElo(teams.team2, balanceMode));
-
-  const sSum1 = computeTeamScore(teams.team1, balanceMode, 'strength-sum');
-  const sSum2 = computeTeamScore(teams.team2, balanceMode, 'strength-sum');
-  const sAdv1 = computeTeamScore(teams.team1, balanceMode, 'strength-std-max');
-  const sAdv2 = computeTeamScore(teams.team2, balanceMode, 'strength-std-max');
-
-  const pStrSum1 = sSum1 + sSum2 > 0 ? sSum1 / (sSum1 + sSum2) : 0.5;
-  const pStrAdv1 = sAdv1 + sAdv2 > 0 ? sAdv1 / (sAdv1 + sAdv2) : 0.5;
-
-  type Fairness = 'very-balanced' | 'balanced' | 'slight-edge' | 'favored' | 'one-sided';
-  // Convert win probability (of the stronger team) to a fairness level
-  function probFairness(p: number): Fairness {
-    const top = Math.max(p, 1 - p);
-    if (top < 0.52) return 'very-balanced';
-    if (top < 0.56) return 'balanced';
-    if (top < 0.60) return 'slight-edge';
-    if (top < 0.65) return 'favored';
-    return 'one-sided';
-  }
-  function eloFairness(d: number): Fairness {
-    if (d <= 50)  return 'very-balanced';
-    if (d <= 100) return 'balanced';
-    if (d <= 150) return 'slight-edge';
-    if (d <= 200) return 'favored';
-    return 'one-sided';
-  }
-  const fairness: Fairness =
-    algorithm === 'raw-elo'      ? eloFairness(eloDiff) :
-    algorithm === 'strength-sum' ? probFairness(pStrSum1) :
-                                   probFairness(pStrAdv1);
-  const fairnessStyles: Record<Fairness, { bar: string; badge: string; label: string; icon: string }> = {
-    'very-balanced': { bar: 'bg-green-900 text-green-300',   badge: 'bg-green-700 text-green-200',   label: 'Very Balanced', icon: '✅' },
-    'balanced':      { bar: 'bg-teal-900 text-teal-300',     badge: 'bg-teal-700 text-teal-200',     label: 'Balanced',      icon: '🟢' },
-    'slight-edge':   { bar: 'bg-yellow-900 text-yellow-300', badge: 'bg-yellow-700 text-yellow-200', label: 'Slight Edge',   icon: '🟡' },
-    'favored':       { bar: 'bg-orange-900 text-orange-300', badge: 'bg-orange-700 text-orange-200', label: 'Favored',       icon: '🟠' },
-    'one-sided':     { bar: 'bg-red-900 text-red-300',       badge: 'bg-red-700 text-red-200',       label: 'One-Sided',     icon: '🔴' },
-  };
-  const fs = fairnessStyles[fairness];
-
-  const TeamColumn = ({
-    team,
-    label,
-    teamKey,
-  }: {
-    team: CBTPlayer[];
-    label: string;
-    teamKey: 'team1' | 'team2';
-  }) => {
-    const strengthSum   = computeTeamScore(team, balanceMode, 'strength-sum');
-    const strengthAdv   = computeTeamScore(team, balanceMode, 'strength-std-max');
-    return (
-      <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40 flex flex-col">
-        <h3 className="text-lg font-bold mb-4 text-center">{label}</h3>
-        <ul className="space-y-2 flex-1">
-          {team.map(player => {
-            const elo      = getBalanceElo(player, balanceMode);
-            const strength = Math.pow(10, elo / STRENGTH_COEFFICIENT);
-            return (
-              <li
-                key={player.profile_id}
-                onClick={() => movePlayer(player, teamKey)}
-                title="Click to move to the other team"
-                className="flex items-center justify-between px-3 py-2 rounded bg-gray-700 hover:bg-blue-900 cursor-pointer transition-colors"
-              >
-                <span className="font-medium text-sm flex items-center gap-2">
-                  {player.isAI && <span title={player.aiDifficulty}>🤖</span>}
-                  <span>{player.name}</span>
-                </span>
-                {!player.isAI && (
-                  <span className="flex items-center gap-2 ml-3 shrink-0">
-                    <span className="text-sm text-blue-300">{elo}</span>
-                    <span className="text-xs text-gray-400">({strength.toFixed(2)})</span>
-                  </span>
-                )}
-              </li>
-            );
-          })}
-          {team.length === 0 && (
-            <li className="text-gray-500 text-sm text-center py-4">— empty —</li>
-          )}
-        </ul>
-        <div className="mt-4 border-t border-gray-700 pt-3 space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-400">Total ELO</span>
-            <span className="font-bold">{teamElo(team, balanceMode)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Strength sum</span>
-            <span className="font-bold">{strengthSum.toFixed(3)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-400">Strength+Std/Max</span>
-            <span className="font-bold">{strengthAdv.toFixed(3)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full space-y-4">
-      {/* Status bar */}
-      <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${fs.bar}`}>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${fs.badge}`}>
-            {fs.icon} {fs.label}
-          </span>
-          {teams.usedAI && <span className="text-orange-400 text-xs">🤖 AI included</span>}
-          <span className="text-xs font-normal opacity-70 ml-auto">Click player to swap teams</span>
+      <TeamsDisplay
+        team1={teams.team1}
+        team2={teams.team2}
+        mode={balanceMode}
+        algorithm={algorithm}
+        usedAI={teams.usedAI}
+        onMovePlayer={movePlayer}
+      >
+        {/* Algorithm switcher */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs text-gray-400 mr-1">Method:</span>
+          {BALANCE_ALGORITHMS.map(algo => (
+            <button
+              key={algo.key}
+              onClick={() => handleSwitchAlgorithm(algo.key)}
+              title={algo.description}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                algorithm === algo.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {algo.label}
+            </button>
+          ))}
         </div>
-        <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs font-normal opacity-90">
-          <span>ELO diff: <strong>{eloDiff}</strong></span>
-          <span>Strength win%: <strong>T1 {(pStrSum1 * 100).toFixed(1)}% · T2 {((1 - pStrSum1) * 100).toFixed(1)}%</strong></span>
-          <span>Str+Std/Max win%: <strong>T1 {(pStrAdv1 * 100).toFixed(1)}% · T2 {((1 - pStrAdv1) * 100).toFixed(1)}%</strong></span>
-        </div>
-      </div>
-
-      {/* Algorithm switcher */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-xs text-gray-400 mr-1">Method:</span>
-        {BALANCE_ALGORITHMS.map(algo => (
-          <button
-            key={algo.key}
-            onClick={() => handleSwitchAlgorithm(algo.key)}
-            title={algo.description}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-              algorithm === algo.key
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            {algo.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <TeamColumn team={teams.team1} label="Team 1" teamKey="team1" />
-        <TeamColumn team={teams.team2} label="Team 2" teamKey="team2" />
-      </div>
+      </TeamsDisplay>
 
       <div className="flex gap-3 justify-end">
         <button
