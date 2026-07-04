@@ -93,6 +93,7 @@ function MainApp() {
   const [recentQueries, setRecentQueries] = useState<{ name: string; profile_id: number }[]>([]);
   const [showRecent, setShowRecent] = useState<boolean>(false);
   const [currentNickname, setCurrentNickname] = useState<string>('');
+  const [currentProfileId, setCurrentProfileId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'stats' | 'balanced' | 'checker' | 'coach'>('stats');
   const navigate = useNavigate();
   const { profileIdParam } = useParams();
@@ -172,8 +173,16 @@ function MainApp() {
     return sorted;
   }
 
-  // Helper: check if input is a number (profile id)
-  const isProfileId = (value: string) => /^\d+$/.test(value.trim());
+  // Helper: display format used in the profile bar
+  const formatProfileLabel = (name: string, id: number) => `${name} (#${id})`;
+
+  // Helper: extract a profile id from the input value ("12345" or "Nickname (#12345)")
+  function extractProfileId(value: string): number | null {
+    const raw = value.trim();
+    if (/^\d+$/.test(raw)) return Number(raw);
+    const match = raw.match(/#(\d+)\)?$/);
+    return match ? Number(match[1]) : null;
+  }
 
   // Autocomplete nickname search
   const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +190,7 @@ function MainApp() {
     setProfileId(value);
     setSelectedSuggestion(null);
     setError('');
-    if (!value.trim() || isProfileId(value)) {
+    if (!value.trim() || extractProfileId(value) !== null) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
@@ -201,7 +210,7 @@ function MainApp() {
 
   // Handle suggestion click
   const handleSuggestionClick = (player: PlayerSuggestion) => {
-    setProfileId(player.profile_id.toString());
+    setProfileId(formatProfileLabel(player.name, player.profile_id));
     setSelectedSuggestion(player);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -212,7 +221,7 @@ function MainApp() {
 
   // Handle recent query selection
   const handleRecentClick = (query: { name: string; profile_id: number }) => {
-    setProfileId(query.profile_id.toString());
+    setProfileId(formatProfileLabel(query.name, query.profile_id));
     setSelectedSuggestion({
       name: query.name,
       profile_id: query.profile_id,
@@ -285,6 +294,8 @@ function MainApp() {
         id.toString();
 
       setCurrentNickname(name);
+      setCurrentProfileId(id);
+      setProfileId(formatProfileLabel(name, id));
       addRecentQuery(name, id);
 
       // Update URL if not already there
@@ -308,8 +319,9 @@ function MainApp() {
     }
 
     let idNum: number;
-    if (/^\d+$/.test(raw)) {
-      idNum = Number(raw);
+    const parsedId = extractProfileId(raw);
+    if (parsedId !== null) {
+      idNum = parsedId;
     } else if (selectedSuggestion) {
       idNum = selectedSuggestion.profile_id;
     } else if (suggestions.length) {
@@ -465,14 +477,14 @@ function MainApp() {
 
         {activeTab === 'checker' && (
           <BalanceChecker
-            currentPlayer={stats && /^\d+$/.test(profileId) ? { profile_id: Number(profileId), name: currentNickname } : undefined}
+            currentPlayer={stats && currentProfileId !== null ? { profile_id: currentProfileId, name: currentNickname } : undefined}
           />
         )}
 
         {activeTab === 'balanced' && (
           <BalancedTeams
             allies={stats?.allies ?? []}
-            currentPlayer={stats && /^\d+$/.test(profileId) ? { profile_id: Number(profileId), name: currentNickname } : undefined}
+            currentPlayer={stats && currentProfileId !== null ? { profile_id: currentProfileId, name: currentNickname } : undefined}
           />
         )}
 
