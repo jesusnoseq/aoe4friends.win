@@ -8,33 +8,44 @@ This file provides guidance for AI coding agents working in this repository.
 
 ```
 aoe4friends/
-└── front/          ← The entire project lives here (Vite + React SPA)
+├── AGENTS.md               ← This guide (shared AI agent conventions)
+├── CLAUDE.md               ← Claude Code entry point (defers to AGENTS.md)
+├── README.md               ← Project overview
+├── skills-lock.json        ← Pinned versions of autoskills (see .agents/)
+├── .agents/skills/         ← Vendored skills: accessibility, frontend-design, seo
+└── front/                  ← The entire project lives here (Vite + React SPA)
     ├── index.html
     ├── package.json
     ├── vite.config.ts
     ├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
     ├── eslint.config.js
     ├── tailwind.config.js
+    ├── postcss.config.js
+    ├── public/                              ← Static assets (robots.txt, sitemap.xml)
     └── src/
-        ├── main.tsx                          ← React DOM entry point
-        ├── App.tsx                           ← Root component + routing
-        ├── components/                       ← UI components
+        ├── main.tsx                         ← React DOM entry point
+        ├── App.tsx                          ← Root component + routing
+        ├── index.css                        ← Tailwind entry stylesheet
+        ├── vite-env.d.ts                    ← Vite type declarations
+        ├── components/                      ← UI components
+        │   ├── AICoach.tsx                  ← "AI Coach (BETA)" placeholder
         │   ├── AlliesTable.tsx
         │   ├── OpponentsTable.tsx
         │   ├── BalancedTeams.tsx
         │   ├── CivCharts.tsx
         │   ├── GameDurationChart.tsx
         │   ├── MapBarChart.tsx
-        │   └── SortableTh.tsx
-        └── services/                         ← Business logic, types, API
-            ├── aoe4worldTypes.request.ts     ← API response types & enums
-            ├── aoe4worldTypes.analysis.ts    ← Analysis result types
-            ├── aoe4worldRequests.ts          ← Fetch + LZString cache helpers
-            ├── aoe4worldAnalysis.ts          ← Pure analysis functions
-            └── balancedTeamsLogic.ts         ← Team balancing algorithms
+        │   ├── SortableTh.tsx
+        │   └── Spinner.tsx
+        └── services/                        ← Business logic, types, API
+            ├── aoe4worldTypes.request.ts    ← API response types & enums
+            ├── aoe4worldTypes.analysis.ts   ← Analysis result types
+            ├── aoe4worldRequests.ts         ← Fetch + LZString cache helpers
+            ├── aoe4worldAnalysis.ts         ← Pure analysis functions
+            └── balancedTeamsLogic.ts        ← Team balancing algorithms
 ```
 
-All work is done inside the `front/` directory. There is no backend; this is a purely client-side SPA that consumes the public aoe4world.com API.
+All application work is done inside the `front/` directory. There is no backend; this is a purely client-side SPA that consumes the public aoe4world.com API. The `AICoach` component is currently a "Coming soon" placeholder — despite the "AI Coach" name it makes no API calls and requires no keys.
 
 ---
 
