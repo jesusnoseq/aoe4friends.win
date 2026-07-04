@@ -29,6 +29,10 @@ export default {
     }
 
     const upstream = await fetch(`${UPSTREAM_ORIGIN}${url.pathname}${url.search}`, {
+      cf: {
+        cacheEverything: true,
+        cacheTtl: 3600
+      },
       headers: {
         'User-Agent': USER_AGENT,
         Accept: 'application/json',
