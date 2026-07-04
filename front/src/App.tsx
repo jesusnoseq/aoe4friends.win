@@ -463,7 +463,11 @@ function MainApp() {
 
         {activeTab === 'coach' && <AICoach />}
 
-        {activeTab === 'checker' && <BalanceChecker />}
+        {activeTab === 'checker' && (
+          <BalanceChecker
+            currentPlayer={stats && /^\d+$/.test(profileId) ? { profile_id: Number(profileId), name: currentNickname } : undefined}
+          />
+        )}
 
         {activeTab === 'balanced' && (
           <BalancedTeams

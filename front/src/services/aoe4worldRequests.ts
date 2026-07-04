@@ -147,6 +147,7 @@ interface SingleGameResponse {
   map: string;
   kind?: string;
   leaderboard?: string;
+  ongoing?: boolean;
   teams: SingleGamePlayer[][];
 }
 
@@ -155,6 +156,7 @@ export interface CheckedGame {
   map: string;
   leaderboard: string;
   mode: RatingMode;
+  ongoing: boolean;
   team1: CBTPlayer[];
   team2: CBTPlayer[];
   team1Won?: boolean;
@@ -180,12 +182,9 @@ function leaderboardToRatingMode(leaderboard: string, teamSize: number): RatingM
   return bySize;
 }
 
-export async function fetchGameForBalanceCheck(gameId: number): Promise<CheckedGame> {
-  const res = await fetch(`${API_BASE_URL}/v0/games/${gameId}`);
-  if (!res.ok) throw new Error(`Game ${gameId} not found`);
-  const data: SingleGameResponse = await res.json();
+function parseCheckedGame(data: SingleGameResponse): CheckedGame {
   if (!Array.isArray(data.teams) || data.teams.length < 2) {
-    throw new Error(`Game ${gameId} has no team data`);
+    throw new Error(`Game ${data.game_id} has no team data`);
   }
 
   const leaderboard = data.leaderboard || data.kind || '';
@@ -205,10 +204,24 @@ export async function fetchGameForBalanceCheck(gameId: number): Promise<CheckedG
     map: data.map,
     leaderboard,
     mode,
+    ongoing: data.ongoing ?? false,
     team1: data.teams[0].map(toCBTPlayer),
     team2: data.teams[1].map(toCBTPlayer),
     team1Won: team1Result === undefined ? undefined : team1Result === 'win',
   };
+}
+
+export async function fetchGameForBalanceCheck(gameId: number): Promise<CheckedGame> {
+  const res = await fetch(`${API_BASE_URL}/v0/games/${gameId}`);
+  if (!res.ok) throw new Error(`Game ${gameId} not found`);
+  return parseCheckedGame(await res.json());
+}
+
+// Latest game of a player; the endpoint includes ongoing (unfinished) games.
+export async function fetchLastGameForBalanceCheck(profileId: number): Promise<CheckedGame> {
+  const res = await fetch(`${API_BASE_URL}/v0/players/${profileId}/games/last`);
+  if (!res.ok) throw new Error(`No last game found for player ${profileId}`);
+  return parseCheckedGame(await res.json());
 }
 
 export async function searchPlayersForCBT(

@@ -1,14 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Scale, Search } from 'lucide-react';
-import { type CheckedGame, parseGameId, fetchGameForBalanceCheck } from '../services/aoe4worldRequests';
+import { type CheckedGame, parseGameId, fetchGameForBalanceCheck, fetchLastGameForBalanceCheck } from '../services/aoe4worldRequests';
 import Spinner from './Spinner';
 import TeamsDisplay from './TeamsDisplay';
 
-export default function BalanceChecker() {
+interface Props {
+  currentPlayer?: { profile_id: number; name: string };
+}
+
+export default function BalanceChecker({ currentPlayer }: Props) {
   const [input, setInput] = useState('');
   const [game, setGame] = useState<CheckedGame | null>(null);
+  const [autoLoaded, setAutoLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-show the current player's latest game (even if still ongoing)
+  useEffect(() => {
+    if (!currentPlayer) return;
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+    fetchLastGameForBalanceCheck(currentPlayer.profile_id)
+      .then(g => {
+        if (cancelled) return;
+        setGame(g);
+        setAutoLoaded(true);
+      })
+      .catch(() => { /* no last game available; leave the manual search usable */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [currentPlayer?.profile_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,6 +42,7 @@ export default function BalanceChecker() {
     setLoading(true);
     setError('');
     setGame(null);
+    setAutoLoaded(false);
     try {
       setGame(await fetchGameForBalanceCheck(gameId));
     } catch {
@@ -69,9 +92,15 @@ export default function BalanceChecker() {
       {game && !loading && (
         <>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-gray-400 px-1">
+            {autoLoaded && currentPlayer && (
+              <span className="text-blue-300">Latest game of <strong>{currentPlayer.name}</strong></span>
+            )}
             <span>Map: <strong className="text-white">{game.map}</strong></span>
             <span>Mode: <strong className="text-white">{game.leaderboard}</strong></span>
             <span>Game: <strong className="text-white">#{game.game_id}</strong></span>
+            {game.ongoing && (
+              <span className="px-2 py-0.5 rounded bg-yellow-900 text-yellow-300 text-xs font-semibold">⏳ Ongoing</span>
+            )}
           </div>
           <TeamsDisplay
             team1={game.team1}
