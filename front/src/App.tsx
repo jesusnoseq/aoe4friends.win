@@ -7,6 +7,7 @@ import CivCharts from './components/CivCharts';
 import { analyzeGames } from './services/aoe4worldAnalysis';
 import { Game, Player } from './services/aoe4worldTypes.request';
 import { fetchGamesWithCache } from './services/aoe4worldRequests';
+import { API_BASE_URL } from './services/apiConfig';
 import GameDurationChart from './components/GameDurationChart';
 import MapBarChart from './components/MapBarChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
@@ -186,7 +187,7 @@ function MainApp() {
     }
     try {
       const res = await fetch(
-        `https://aoe4world.com/api/v0/players/autocomplete?leaderboard=rm_team&query=${encodeURIComponent(value)}`
+        `${API_BASE_URL}/v0/players/autocomplete?leaderboard=rm_team&query=${encodeURIComponent(value)}`
       );
       const data = await res.json();
       setSuggestions(data.players || []);

@@ -1,5 +1,6 @@
 import { Game } from "./aoe4worldTypes.request";
 import LZString from "lz-string";
+import { API_BASE_URL } from "./apiConfig";
 
 // Fetch all games for a profile_id, with paging, and cache in localStorage
 export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
@@ -12,7 +13,7 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
     let page = 1;
 
     outer: while (true) {
-      const url = `https://aoe4world.com/api/v0/players/${profileId}/games?page=${page}`;
+      const url = `${API_BASE_URL}/v0/players/${profileId}/games?page=${page}`;
       const resp = await fetch(url);
       if (!resp.ok) throw new Error('Failed to fetch games');
       const data = await resp.json();
@@ -39,7 +40,7 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
   let allGames: Game[] = [];
   let page = 1;
   while (true) {
-    const url = `https://aoe4world.com/api/v0/players/${profileId}/games?page=${page}`;
+    const url = `${API_BASE_URL}/v0/players/${profileId}/games?page=${page}`;
     console.log(`Fetching games from ${url}`);
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('Failed to fetch games');
@@ -123,7 +124,7 @@ function parseCBTProfile(raw: RawPlayerData): CBTPlayerProfile {
 }
 
 export async function fetchPlayerProfileForCBT(profileId: number): Promise<CBTPlayerProfile> {
-  const res = await fetch(`https://aoe4world.com/api/v0/players/${profileId}`);
+  const res = await fetch(`${API_BASE_URL}/v0/players/${profileId}`);
   if (!res.ok) throw new Error(`Failed to fetch player ${profileId}`);
   return parseCBTProfile(await res.json());
 }
@@ -132,7 +133,7 @@ export async function searchPlayersForCBT(
   query: string
 ): Promise<Array<{ profile_id: number; name: string; rating?: number }>> {
   const res = await fetch(
-    `https://aoe4world.com/api/v0/players/search?query=${encodeURIComponent(query)}`
+    `${API_BASE_URL}/v0/players/search?query=${encodeURIComponent(query)}`
   );
   if (!res.ok) return [];
   const data = await res.json();
