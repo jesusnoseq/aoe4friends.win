@@ -10,6 +10,7 @@ opponents, maps, and more — all powered by the public
 ## Features
 
 ### Player insights
+
 - **Search** any player by nickname (with live autocomplete) or numeric profile ID.
 - **Recent queries** are remembered locally (last 10) for quick re-visits.
 - **Deep-linkable URLs** — every player has a shareable link (`/:profileId`).
@@ -22,18 +23,24 @@ opponents, maps, and more — all powered by the public
 - **Map performance** — win/loss breakdown by map.
 
 ### Team balancer
+
 - Build **balanced custom-game teams** across all rating modes (ranked/quick match,
   1v1 through 4v4).
 - Three balancing algorithms: `raw-elo`, `strength-sum`, and `strength-std-max`.
 - Fill empty slots with **AI opponents** at selectable difficulties.
 
 ### AI Coach *(BETA)*
+
 - Placeholder for upcoming AI-powered coaching. Currently shows "Coming soon".
 
 ### Under the hood
+
 - **Client-side caching** — game data is LZString-compressed in `localStorage`, and
   revisits fetch only new games incrementally.
-- **No backend** — a purely client-side SPA; no server or environment variables required.
+- **API proxy backend** — the SPA never calls aoe4world.com directly from the
+  browser; requests go through `/api`, a small Cloudflare Worker
+  ([`backend/`](./backend)) that forwards them upstream with the app's
+  User-Agent (`aoe4friends (@jesusnoseq)`).
 
 ## Tech Stack
 
@@ -72,8 +79,27 @@ npm run preview
 npm run lint
 ```
 
-No backend, API keys, or environment variables are required — the app talks
-directly to the public aoe4world.com API.
+No API keys or environment variables are required. In development, Vite's dev
+server proxies `/api` to aoe4world.com; in production, Cloudflare routes `/api`
+to the Worker in [`backend/`](./backend). The base URL can be overridden with
+`VITE_API_BASE_URL` (defaults to `/api`).
+
+### Backend (Cloudflare Worker)
+
+The proxy lives in [`backend/`](./backend) and is managed with wrangler:
+
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Run the Worker locally (http://localhost:8787)
+npm run dev
+
+# Deploy to Cloudflare
+npm run deploy
+```
 
 ## Project Structure
 
@@ -81,6 +107,7 @@ directly to the public aoe4world.com API.
   - `front/src/components/` — UI components (tables, charts, team balancer, ...).
   - `front/src/services/` — pure business logic: API fetching, caching, analysis,
     and team-balancing algorithms.
+- `backend/` — Cloudflare Worker that proxies `/api/v0/*` to aoe4world.com.
 
 For detailed conventions, layout, and contributor guidance see
 [`AGENTS.md`](./AGENTS.md) (or [`CLAUDE.md`](./CLAUDE.md), which defers to it).

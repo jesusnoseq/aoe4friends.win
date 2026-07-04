@@ -13,7 +13,12 @@ aoe4friends/
 ├── README.md               ← Project overview
 ├── skills-lock.json        ← Pinned versions of autoskills (see .agents/)
 ├── .agents/skills/         ← Vendored skills: accessibility, frontend-design, seo
-└── front/                  ← The entire project lives here (Vite + React SPA)
+├── backend/                ← Cloudflare Worker proxying /api/v0/* to aoe4world.com
+│   ├── package.json        ← wrangler scripts (dev, deploy, typecheck)
+│   ├── wrangler.jsonc      ← Worker config (name: aoe4friends-api)
+│   ├── tsconfig.json
+│   └── src/index.ts        ← The proxy (GET-only, sets the app User-Agent)
+└── front/                  ← The web app lives here (Vite + React SPA)
     ├── index.html
     ├── package.json
     ├── vite.config.ts
@@ -38,6 +43,7 @@ aoe4friends/
         │   ├── SortableTh.tsx
         │   └── Spinner.tsx
         └── services/                        ← Business logic, types, API
+            ├── apiConfig.ts                 ← API base URL (VITE_API_BASE_URL, default /api)
             ├── aoe4worldTypes.request.ts    ← API response types & enums
             ├── aoe4worldTypes.analysis.ts   ← Analysis result types
             ├── aoe4worldRequests.ts         ← Fetch + LZString cache helpers
@@ -45,7 +51,7 @@ aoe4friends/
             └── balancedTeamsLogic.ts        ← Team balancing algorithms
 ```
 
-All application work is done inside the `front/` directory. There is no backend; this is a purely client-side SPA that consumes the public aoe4world.com API. The `AICoach` component is currently a "Coming soon" placeholder — despite the "AI Coach" name it makes no API calls and requires no keys.
+Application work happens in `front/` (the SPA) and `backend/` (a minimal Cloudflare Worker). The browser never calls aoe4world.com directly: the SPA requests `${API_BASE_URL}/v0/...` (default `/api`), which the Vite dev proxy serves in development and the Worker serves in production, forwarding upstream with the `aoe4friends (@jesusnoseq)` User-Agent. The `AICoach` component is currently a "Coming soon" placeholder — despite the "AI Coach" name it makes no API calls and requires no keys.
 
 ---
 
@@ -66,7 +72,7 @@ All application work is done inside the `front/` directory. There is no backend;
 
 ## Commands
 
-All commands must be run from the `front/` directory.
+Frontend commands must be run from the `front/` directory.
 
 ```bash
 # Install dependencies
@@ -83,6 +89,15 @@ npm run preview
 
 # Lint (ESLint v9 flat config)
 npm run lint
+```
+
+Backend (Cloudflare Worker) commands run from `backend/`:
+
+```bash
+npm install        # once
+npm run dev        # wrangler dev on http://localhost:8787
+npm run typecheck  # tsc --noEmit
+npm run deploy     # wrangler deploy
 ```
 
 ### Testing
@@ -201,7 +216,7 @@ There is no Prettier config. Follow the existing style observed in the codebase:
 - **Separation of concerns**: API types, fetch logic, analysis logic, and algorithm logic live in `src/services/` as pure modules. Components in `src/components/` only handle rendering and user interaction.
 - **localStorage caching**: Game data is LZString-compressed before storage. Incremental updates fetch only new games on re-visits. See `aoe4worldRequests.ts`.
 - **URL-based deep linking**: Player profile IDs are embedded in the URL path via React Router (`/:profileIdParam?`), enabling bookmarkable links. Routing is defined in `App.tsx`.
-- **No backend**: All data comes from the public aoe4world.com API. No server, no environment variables required for basic usage.
+- **API proxy**: All data comes from the public aoe4world.com API, but always through the `/api` proxy (Vite dev proxy locally, the `backend/` Worker in production) — never directly from the browser. The base URL is configurable via `VITE_API_BASE_URL` (see `src/services/apiConfig.ts`); no environment variables are required for basic usage.
 - **No CI/CD**: There is no `.github/workflows/` directory. Linting and building must be run manually.
 
 ---
