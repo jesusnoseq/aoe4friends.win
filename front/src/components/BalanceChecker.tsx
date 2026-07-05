@@ -13,6 +13,7 @@ export default function BalanceChecker({ currentPlayer }: Props) {
   const [game, setGame] = useState<CheckedGame | null>(null);
   const [autoLoaded, setAutoLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [autoLoading, setAutoLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Auto-show the current player's latest game (even if still ongoing)
@@ -20,6 +21,7 @@ export default function BalanceChecker({ currentPlayer }: Props) {
     if (!currentPlayer) return;
     let cancelled = false;
     setLoading(true);
+    setAutoLoading(true);
     setError('');
     fetchLastGameForBalanceCheck(currentPlayer.profile_id)
       .then(g => {
@@ -28,7 +30,7 @@ export default function BalanceChecker({ currentPlayer }: Props) {
         setAutoLoaded(true);
       })
       .catch(() => { /* no last game available; leave the manual search usable */ })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => { if (!cancelled) { setLoading(false); setAutoLoading(false); } });
     return () => { cancelled = true; };
   }, [currentPlayer?.profile_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -84,8 +86,13 @@ export default function BalanceChecker({ currentPlayer }: Props) {
       </div>
 
       {loading && (
-        <div className="flex justify-center py-8">
+        <div className="flex flex-col items-center justify-center gap-3 py-8">
           <Spinner size={40} className="text-blue-400" />
+          {autoLoading && currentPlayer && (
+            <p className="text-sm text-blue-300">
+              Loading latest game of <strong>{currentPlayer.name}</strong>…
+            </p>
+          )}
         </div>
       )}
 
