@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { type RatingMode, type CBTPlayer, type BalanceAlgorithm, getBalanceElo, teamElo, computeTeamScore, STRENGTH_COEFFICIENT } from '../services/balancedTeamsLogic';
+import { type BalanceMode, type CBTPlayer, type BalanceAlgorithm, getBalanceElo, teamElo, computeTeamScore, STRENGTH_COEFFICIENT } from '../services/balancedTeamsLogic';
 
 // ─── Fairness ────────────────────────────────────────────────────────────────
 
@@ -36,7 +36,7 @@ const fairnessStyles: Record<Fairness, { bar: string; badge: string; label: stri
 interface Props {
   team1: CBTPlayer[];
   team2: CBTPlayer[];
-  mode: RatingMode;
+  mode: BalanceMode;
   algorithm: BalanceAlgorithm;
   usedAI?: boolean;
   team1Label?: string;

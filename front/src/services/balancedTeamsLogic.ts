@@ -2,6 +2,8 @@
 
 export type RatingMode = 'rm_1v1' | 'qm_1v1' | 'rm_2v2' | 'qm_2v2' | 'rm_3v3' | 'qm_3v3' | 'rm_4v4' | 'qm_4v4';
 
+export type BalanceMode = RatingMode | 'max';
+
 export type BalanceAlgorithm = 'raw-elo' | 'strength-sum' | 'strength-std-max';
 
 export interface AlgorithmMeta {
@@ -63,7 +65,11 @@ export const BALANCE_ALGORITHMS: AlgorithmMeta[] = [
 
 // ─── Algorithm ───────────────────────────────────────────────────────────────
 
-export function getBalanceElo(player: CBTPlayer, mode: RatingMode): number {
+export function getBalanceElo(player: CBTPlayer, mode: BalanceMode): number {
+  if (mode === 'max') {
+    const vals = Object.values(player.ratings).filter((v): v is number => v !== undefined);
+    return vals.length ? Math.max(...vals) : 0;
+  }
   const order: RatingMode[] = [mode, 'rm_1v1', 'qm_1v1', 'rm_2v2', 'qm_2v2', 'rm_3v3', 'qm_3v3', 'rm_4v4', 'qm_4v4'];
   for (const m of order) {
     if (player.ratings[m] !== undefined) return player.ratings[m]!;
@@ -71,11 +77,11 @@ export function getBalanceElo(player: CBTPlayer, mode: RatingMode): number {
   return 0;
 }
 
-export function teamElo(team: CBTPlayer[], mode: RatingMode): number {
+export function teamElo(team: CBTPlayer[], mode: BalanceMode): number {
   return team.reduce((s, p) => s + getBalanceElo(p, mode), 0);
 }
 
-export function computeTeamScore(team: CBTPlayer[], mode: RatingMode, algorithm: BalanceAlgorithm): number {
+export function computeTeamScore(team: CBTPlayer[], mode: BalanceMode, algorithm: BalanceAlgorithm): number {
   if (algorithm === 'raw-elo') return teamElo(team, mode);
   const strengths = team.map(p => Math.pow(10, getBalanceElo(p, mode) / STRENGTH_COEFFICIENT));
   const sum = strengths.reduce((s, v) => s + v, 0);
@@ -91,7 +97,7 @@ export function computeTeamScore(team: CBTPlayer[], mode: RatingMode, algorithm:
 export function isTeamBalanced(
   team1: CBTPlayer[],
   team2: CBTPlayer[],
-  mode: RatingMode,
+  mode: BalanceMode,
   algorithm: BalanceAlgorithm,
 ): boolean {
   if (algorithm === 'raw-elo') {
@@ -116,7 +122,7 @@ function combinations<T>(arr: T[], k: number): T[][] {
 
 function findBestSplit(
   players: CBTPlayer[],
-  mode: RatingMode,
+  mode: BalanceMode,
   t1Size: number,
   algorithm: BalanceAlgorithm,
 ): { team1: CBTPlayer[]; team2: CBTPlayer[]; diff: number } {
@@ -133,7 +139,7 @@ function findBestSplit(
 
 function bestSplitForSize(
   players: CBTPlayer[],
-  mode: RatingMode,
+  mode: BalanceMode,
   algorithm: BalanceAlgorithm,
 ): ReturnType<typeof findBestSplit> {
   const N = players.length;
@@ -148,7 +154,7 @@ function bestSplitForSize(
 
 export function createTeams(
   roster: CBTPlayer[],
-  mode: RatingMode,
+  mode: BalanceMode,
   algorithm: BalanceAlgorithm = 'raw-elo',
 ): TeamsState {
   // Step 1 – pure player split

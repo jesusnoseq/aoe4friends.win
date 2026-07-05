@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Users, Trophy } from 'lucide-react';
 import { fetchPlayerProfileForCBT, searchPlayersForCBT } from '../services/aoe4worldRequests';
-import { type RatingMode, type CBTPlayer, type TeamsState, type BalanceAlgorithm, teamElo, createTeams, isTeamBalanced, BALANCE_ALGORITHMS } from '../services/balancedTeamsLogic';
+import { type RatingMode, type BalanceMode, type CBTPlayer, type TeamsState, type BalanceAlgorithm, teamElo, createTeams, isTeamBalanced, getBalanceElo, BALANCE_ALGORITHMS } from '../services/balancedTeamsLogic';
 import Spinner from './Spinner';
 import TeamsDisplay from './TeamsDisplay';
 
@@ -33,7 +33,7 @@ interface Props {
 
 export default function BalancedTeams({ allies, currentPlayer }: Props) {
   const [roster, setRoster] = useState<CBTPlayer[]>([]);
-  const [balanceMode, setBalanceMode] = useState<RatingMode>('rm_1v1');
+  const [balanceMode, setBalanceMode] = useState<BalanceMode>('rm_1v1');
   const [teams, setTeams] = useState<TeamsState | null>(null);
   const [phase, setPhase] = useState<'roster' | 'teams'>('roster');
   const [algorithm, setAlgorithm] = useState<BalanceAlgorithm>('raw-elo');
@@ -260,6 +260,17 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                           {m.label}
                         </th>
                       ))}
+                      <th
+                        onClick={() => setBalanceMode('max')}
+                        title="Balance by highest ELO"
+                        className={`text-center py-2 px-1 cursor-pointer select-none rounded transition-colors whitespace-nowrap hover:text-white ${
+                          balanceMode === 'max'
+                            ? 'text-blue-400 font-bold'
+                            : 'text-gray-400'
+                        }`}
+                      >
+                        Max
+                      </th>
                       <th />
                     </tr>
                   </thead>
@@ -276,6 +287,11 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
                             {ratingCell(player.ratings[m.key])}
                           </td>
                         ))}
+                        <td
+                          className={`text-center px-1 ${balanceMode === 'max' ? 'text-blue-300 font-semibold' : ''}`}
+                        >
+                          {ratingCell(getBalanceElo(player, 'max') || undefined)}
+                        </td>
                         <td className="text-center pl-2">
                           <button
                             onClick={() => removePlayer(player.profile_id)}
@@ -293,7 +309,7 @@ export default function BalancedTeams({ allies, currentPlayer }: Props) {
             <p className="mt-3 text-xs text-gray-500">
               Click a column header to set the ELO used for balancing.{' '}
               <span className="text-blue-400">
-                Active: {RATING_MODES.find(m => m.key === balanceMode)?.label}
+                Active: {balanceMode === 'max' ? 'Max' : RATING_MODES.find(m => m.key === balanceMode)?.label}
               </span>
             </p>
             <button
