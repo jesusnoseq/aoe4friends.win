@@ -114,6 +114,7 @@ export default function BalanceChecker({ currentPlayer }: Props) {
             team2={game.team2}
             mode={game.mode}
             algorithm="raw-elo"
+            showAllMethods
             team1Label={game.team1Won === undefined ? 'Team 1' : game.team1Won ? 'Team 1 🏆' : 'Team 1'}
             team2Label={game.team1Won === undefined ? 'Team 2' : game.team1Won ? 'Team 2' : 'Team 2 🏆'}
           />

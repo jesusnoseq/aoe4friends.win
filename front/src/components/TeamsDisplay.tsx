@@ -42,10 +42,11 @@ interface Props {
   team1Label?: string;
   team2Label?: string;
   onMovePlayer?: (player: CBTPlayer, fromTeam: 'team1' | 'team2') => void;
+  showAllMethods?: boolean; // render one colored panel per balance method instead of a single bar
   children?: ReactNode; // rendered between the status bar and the team columns
 }
 
-export default function TeamsDisplay({ team1, team2, mode, algorithm, usedAI, team1Label = 'Team 1', team2Label = 'Team 2', onMovePlayer, children }: Props) {
+export default function TeamsDisplay({ team1, team2, mode, algorithm, usedAI, team1Label = 'Team 1', team2Label = 'Team 2', onMovePlayer, showAllMethods, children }: Props) {
   const elo1 = teamElo(team1, mode);
   const elo2 = teamElo(team2, mode);
   const eloDiff = Math.abs(elo1 - elo2);
@@ -63,6 +64,25 @@ export default function TeamsDisplay({ team1, team2, mode, algorithm, usedAI, te
     algorithm === 'strength-sum' ? probFairness(pStrSum1) :
                                    probFairness(pStrAdv1);
   const fs = fairnessStyles[fairness];
+
+  // One evaluation per balance method — shown as separate colored panels when showAllMethods is set.
+  const methods: { name: string; fairness: Fairness; detail: ReactNode }[] = [
+    {
+      name: 'ELO',
+      fairness: eloFairness(eloDiff),
+      detail: <>ELO diff <strong>{eloDiff}</strong> · T1 {elo1} · T2 {elo2}</>,
+    },
+    {
+      name: 'Strength',
+      fairness: probFairness(pStrSum1),
+      detail: <>Win% T1 <strong>{(pStrSum1 * 100).toFixed(1)}%</strong> · T2 <strong>{((1 - pStrSum1) * 100).toFixed(1)}%</strong></>,
+    },
+    {
+      name: 'Str+Std/Max',
+      fairness: probFairness(pStrAdv1),
+      detail: <>Win% T1 <strong>{(pStrAdv1 * 100).toFixed(1)}%</strong> · T2 <strong>{((1 - pStrAdv1) * 100).toFixed(1)}%</strong></>,
+    },
+  ];
 
   const TeamColumn = ({
     team,
@@ -128,22 +148,43 @@ export default function TeamsDisplay({ team1, team2, mode, algorithm, usedAI, te
 
   return (
     <div className="w-full space-y-4">
-      {/* Status bar */}
-      <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${fs.bar}`}>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${fs.badge}`}>
-            {fs.icon} {fs.label}
-          </span>
-          {usedAI && <span className="text-orange-400 text-xs">🤖 AI included</span>}
-          {onMovePlayer && <span className="text-xs font-normal opacity-70 ml-auto">Click player to swap teams</span>}
+      {showAllMethods ? (
+        <>
+          {usedAI && <p className="text-orange-400 text-xs px-1">🤖 AI included</p>}
+          {/* One colored evaluation panel per balance method */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {methods.map(m => {
+              const ms = fairnessStyles[m.fairness];
+              return (
+                <div key={m.name} className={`px-4 py-3 rounded-lg ${ms.bar}`}>
+                  <div className="text-xs font-semibold uppercase tracking-wide opacity-70">{m.name}</div>
+                  <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-bold ${ms.badge}`}>
+                    {ms.icon} {ms.label}
+                  </span>
+                  <div className="mt-2 text-xs font-normal opacity-90">{m.detail}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        /* Status bar */
+        <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${fs.bar}`}>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`px-2 py-0.5 rounded text-xs font-bold ${fs.badge}`}>
+              {fs.icon} {fs.label}
+            </span>
+            {usedAI && <span className="text-orange-400 text-xs">🤖 AI included</span>}
+            {onMovePlayer && <span className="text-xs font-normal opacity-70 ml-auto">Click player to swap teams</span>}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs font-normal opacity-90">
+            <span>ELO sum: <strong>T1 {elo1} · T2 {elo2}</strong></span>
+            <span>ELO diff: <strong>{eloDiff}</strong></span>
+            <span>Strength win%: <strong>T1 {(pStrSum1 * 100).toFixed(1)}% · T2 {((1 - pStrSum1) * 100).toFixed(1)}%</strong></span>
+            <span>Str+Std/Max win%: <strong>T1 {(pStrAdv1 * 100).toFixed(1)}% · T2 {((1 - pStrAdv1) * 100).toFixed(1)}%</strong></span>
+          </div>
         </div>
-        <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs font-normal opacity-90">
-          <span>ELO sum: <strong>T1 {elo1} · T2 {elo2}</strong></span>
-          <span>ELO diff: <strong>{eloDiff}</strong></span>
-          <span>Strength win%: <strong>T1 {(pStrSum1 * 100).toFixed(1)}% · T2 {((1 - pStrSum1) * 100).toFixed(1)}%</strong></span>
-          <span>Str+Std/Max win%: <strong>T1 {(pStrAdv1 * 100).toFixed(1)}% · T2 {((1 - pStrAdv1) * 100).toFixed(1)}%</strong></span>
-        </div>
-      </div>
+      )}
 
       {children}
 
