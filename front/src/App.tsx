@@ -10,6 +10,7 @@ import { fetchGamesWithCache } from './services/aoe4worldRequests';
 import { API_BASE_URL } from './services/apiConfig';
 import GameDurationChart from './components/GameDurationChart';
 import MapBarChart from './components/MapBarChart';
+import RatingProgressionChart from './components/RatingProgressionChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
 import BalancedTeams from './components/BalancedTeams';
 import BalanceChecker from './components/BalanceChecker';
@@ -614,6 +615,12 @@ function MainApp() {
                 games={games}
                 profileId={Number(profileIdParam) || 0}
               />
+            </div>
+
+            {/* Rating Progression */}
+            <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
+              <h3 className="text-xl font-semibold mb-2">Rating Progression</h3>
+              <RatingProgressionChart games={games} profileId={Number(profileIdParam) || 0} />
             </div>
 
             {/* Civilization Performance */}

@@ -1,4 +1,4 @@
-import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution } from './aoe4worldTypes.analysis';
+import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution, RatingProgression, RatingPoint } from './aoe4worldTypes.analysis';
 import { Game, Player } from './aoe4worldTypes.request';
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
@@ -170,4 +170,89 @@ export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResu
     maxWinStreak,
     longestGame,
   };
+}
+
+// Normalized display names for the leaderboards tracked by the rating chart.
+// Only these ladders are charted (anything else is ignored), and aliases that
+// mean the same ladder collapse to one name — rm_solo and rm_1v1 both map to
+// "Ranked 1v1", merging their points into a single series.
+// rm = Ranked, qm = Quick Match, qm_*_ew = Empire Wars, qm_ffa = FFA.
+export const LEADERBOARD_LABELS: { [rawKey: string]: string } = {
+  rm_solo: 'Ranked 1v1',
+  rm_1v1: 'Ranked 1v1',
+  rm_2v2: 'Ranked 2v2',
+  rm_3v3: 'Ranked 3v3',
+  rm_4v4: 'Ranked 4v4',
+  rm_team: 'Ranked Team',
+  qm_solo: 'Quick Match 1v1',
+  qm_2v2: 'Quick Match 2v2',
+  qm_3v3: 'Quick Match 3v3',
+  qm_4v4: 'Quick Match 4v4',
+  qm_2v2_ew: 'Empire Wars 2v2',
+  qm_3v3_ew: 'Empire Wars 3v3',
+  qm_4v4_ew: 'Empire Wars 4v4',
+  qm_ffa: 'FFA',
+};
+
+// Row grouping + display order for the rating-chart filter pills: one row per
+// entry. Ranked on the first row, Quick Match on the second, Empire Wars & FFA
+// on the third. Rows/labels with no data for a player are hidden by the chart.
+export const LEADERBOARD_GROUPS: { group: 'rm' | 'qm' | 'ew'; labels: string[] }[] = [
+  { group: 'rm', labels: ['Ranked 1v1', 'Ranked 2v2', 'Ranked 3v3', 'Ranked 4v4', 'Ranked Team'] },
+  { group: 'qm', labels: ['Quick Match 1v1', 'Quick Match 2v2', 'Quick Match 3v3', 'Quick Match 4v4'] },
+  { group: 'ew', labels: ['Empire Wars 2v2', 'Empire Wars 3v3', 'Empire Wars 4v4', 'FFA'] },
+];
+
+/**
+ * Builds a per-leaderboard rating/MMR time series for a player from raw games.
+ * Rating is per-ladder, so points are grouped by normalized leaderboard name
+ * (see LEADERBOARD_LABELS) and each group is sorted chronologically. Only the
+ * ladders in LEADERBOARD_LABELS are tracked; games on other ladders and games
+ * without a rating and mmr are skipped, so the series reflects rated games only.
+ * Pure function — no side effects.
+ */
+export function buildRatingProgression(games: Game[], profileId: number): RatingProgression {
+  const byLeaderboard: { [leaderboard: string]: RatingPoint[] } = {};
+
+  for (const game of games) {
+    let playerInfo: Player | null = null;
+    for (const team of game.teams) {
+      for (const member of team) {
+        if (member.player.profile_id === profileId) {
+          playerInfo = member.player;
+          break;
+        }
+      }
+      if (playerInfo) break;
+    }
+    if (!playerInfo) continue;
+
+    const value = playerInfo.rating ?? playerInfo.mmr;
+    if (value === null || value === undefined) continue;
+
+    const rawLeaderboard = String(game.leaderboard ?? game.kind);
+    const label = LEADERBOARD_LABELS[rawLeaderboard];
+    if (!label) continue; // only track known ladders
+
+    const point: RatingPoint = {
+      gameId: game.game_id,
+      startedAt: new Date(game.started_at).toISOString(),
+      season: game.season ?? null,
+      leaderboard: label,
+      value,
+      diff: playerInfo.rating_diff ?? playerInfo.mmr_diff ?? null,
+      won: playerInfo.result === 'win',
+    };
+
+    if (!byLeaderboard[label]) byLeaderboard[label] = [];
+    byLeaderboard[label].push(point);
+  }
+
+  for (const leaderboard of Object.keys(byLeaderboard)) {
+    byLeaderboard[leaderboard].sort(
+      (a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
+    );
+  }
+
+  return { byLeaderboard };
 }

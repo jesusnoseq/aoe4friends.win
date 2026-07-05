@@ -49,3 +49,18 @@ export type DurationDistribution = {
   long: number;
   veryLong: number;
 };
+
+export interface RatingPoint {
+  gameId: number;
+  startedAt: string;      // ISO string
+  season: number | null;  // game.season
+  leaderboard: string;    // normalized display name (see LEADERBOARD_LABELS)
+  value: number;          // rating ?? mmr for that game
+  diff: number | null;    // rating_diff ?? mmr_diff
+  won: boolean;
+}
+
+export interface RatingProgression {
+  // one series per leaderboard the player has rated games in
+  byLeaderboard: { [leaderboard: string]: RatingPoint[] };
+}
