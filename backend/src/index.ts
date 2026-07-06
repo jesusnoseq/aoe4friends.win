@@ -1,9 +1,13 @@
 // Proxy for the aoe4world.com API. The SPA must never call aoe4world directly
 // from the browser; this Worker forwards GET /api/v0/* requests upstream,
-// identifying the app via the User-Agent header.
+// identifying the app via the User-Agent header. Game summaries live outside
+// /api/v0 upstream (aoe4world.com/players/{id}/games/{id}/summary), so that
+// route is allowlisted and the /api prefix stripped before forwarding.
 
 const UPSTREAM_ORIGIN = 'https://aoe4world.com';
 const USER_AGENT = 'aoe4friends (@jesusnoseq)';
+
+const SUMMARY_ROUTE = /^\/api\/players\/\d+\/games\/\d+\/summary$/;
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -24,11 +28,16 @@ export default {
     }
 
     const url = new URL(request.url);
-    if (!url.pathname.startsWith('/api/v0/')) {
+    let upstreamPath: string;
+    if (url.pathname.startsWith('/api/v0/')) {
+      upstreamPath = url.pathname;
+    } else if (SUMMARY_ROUTE.test(url.pathname)) {
+      upstreamPath = url.pathname.slice('/api'.length);
+    } else {
       return new Response('Not found', { status: 404, headers: CORS_HEADERS });
     }
 
-    const upstream = await fetch(`${UPSTREAM_ORIGIN}${url.pathname}${url.search}`, {
+    const upstream = await fetch(`${UPSTREAM_ORIGIN}${upstreamPath}${url.search}`, {
       cf: {
         cacheEverything: true,
         cacheTtl: 3600

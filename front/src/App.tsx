@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
-import { Search, Trophy, Swords, Users2, Flame, Clock, Hourglass, Crown, BarChart2 } from 'lucide-react';
+import { Search, Trophy, Swords, Users2, Flame, Clock, Hourglass, Crown, BarChart2, MessageSquare } from 'lucide-react';
 import AlliesTable from './components/AlliesTable';
 import OpponentsTable from './components/OpponentsTable';
 import CivCharts from './components/CivCharts';
@@ -14,7 +14,7 @@ import RatingProgressionChart from './components/RatingProgressionChart';
 import { DurationDistribution } from './services/aoe4worldTypes.analysis';
 import BalancedTeams from './components/BalancedTeams';
 import BalanceChecker from './components/BalanceChecker';
-import AICoach from './components/AICoach';
+import Coach from './components/Coach';
 import Spinner from './components/Spinner';
 
 interface GameStats {
@@ -70,11 +70,17 @@ interface PlayerSuggestion {
   // ...other fields if needed
 }
 
+const SECTIONS = ['stats', 'balanced', 'checker', 'coach'] as const;
+type Section = typeof SECTIONS[number];
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/:profileIdParam?" element={<MainApp />} />
+        <Route path="/" element={<MainApp />} />
+        <Route path="/:profileIdParam" element={<MainApp />} />
+        <Route path="/:profileIdParam/coach/:gameId" element={<MainApp />} />
+        <Route path="/:profileIdParam/:section" element={<MainApp />} />
       </Routes>
     </BrowserRouter>
   );
@@ -95,9 +101,27 @@ function MainApp() {
   const [showRecent, setShowRecent] = useState<boolean>(false);
   const [currentNickname, setCurrentNickname] = useState<string>('');
   const [currentProfileId, setCurrentProfileId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState<'stats' | 'balanced' | 'checker' | 'coach'>('stats');
+  const [activeTab, setActiveTab] = useState<Section>('stats');
   const navigate = useNavigate();
-  const { profileIdParam } = useParams();
+  const { profileIdParam, section, gameId } = useParams();
+
+  const coachProfileId = profileIdParam && /^\d+$/.test(profileIdParam) ? Number(profileIdParam) : undefined;
+  const coachGameId = gameId && /^\d+$/.test(gameId) ? Number(gameId) : undefined;
+
+  // Keep the active tab in sync with the URL section (the game-review route has
+  // no :section segment, so a game id implies the coach section).
+  useEffect(() => {
+    const desired = gameId ? 'coach' : section;
+    setActiveTab((SECTIONS as readonly string[]).includes(desired ?? '') ? (desired as Section) : 'stats');
+  }, [section, gameId]);
+
+  // Switch tab and reflect it in the URL when a player is loaded.
+  function goToTab(tab: Section) {
+    setActiveTab(tab);
+    if (currentProfileId !== null) {
+      navigate(tab === 'stats' ? `/${currentProfileId}` : `/${currentProfileId}/${tab}`);
+    }
+  }
 
   // Load recent queries from localStorage on mount
   useEffect(() => {
@@ -311,6 +335,22 @@ function MainApp() {
     }
   }
 
+  // Reset the whole app to its initial state and go back to root
+  const handleTitleClick = () => {
+    setProfileId('');
+    setStats(null);
+    setGames([]);
+    setError('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedSuggestion(null);
+    setShowRecent(false);
+    setCurrentNickname('');
+    setCurrentProfileId(null);
+    setActiveTab('stats');
+    navigate('/');
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const raw = profileId.trim();
@@ -345,10 +385,16 @@ function MainApp() {
       )}
       <div className="max-w-6xl mx-auto flex-1 w-full">
         <h1 className="text-4xl font-bold text-center mb-8 flex items-center justify-center gap-3">
-          <span className="bg-blue-600 rounded-full p-2 inline-flex">
-            <Swords className="w-7 h-7 text-white" />
-          </span>
-          Age of Empires IV Friends Stats
+          <button
+            type="button"
+            onClick={handleTitleClick}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
+            <span className="bg-blue-600 rounded-full p-2 inline-flex">
+              <Swords className="w-7 h-7 text-white" />
+            </span>
+            Age of Empires IV Friends Stats
+          </button>
         </h1>
 
         <form onSubmit={handleSubmit} className="mb-8" autoComplete="off">
@@ -438,7 +484,7 @@ function MainApp() {
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
-            onClick={() => setActiveTab('stats')}
+            onClick={() => goToTab('stats')}
           >
             Stats
           </button>
@@ -448,7 +494,7 @@ function MainApp() {
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
-            onClick={() => setActiveTab('balanced')}
+            onClick={() => goToTab('balanced')}
           >
             Create Balanced Teams
           </button>
@@ -458,23 +504,30 @@ function MainApp() {
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
-            onClick={() => setActiveTab('checker')}
+            onClick={() => goToTab('checker')}
           >
             Balance Checker
           </button>
-           { /*<button
+           { <button
             className={`flex-1 px-4 py-2 rounded-md font-semibold transition-colors ${
               activeTab === 'coach'
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700'
             }`}
-            onClick={() => setActiveTab('coach')}
+            onClick={() => goToTab('coach')}
           >
-            AI Coach (BETA)
-          </button>*/}
+            Game Review (BETA)
+          </button>}
         </div>
 
-        {activeTab === 'coach' && <AICoach />}
+        {activeTab === 'coach' && (
+          <Coach
+            currentPlayer={stats && currentProfileId !== null ? { profile_id: currentProfileId, name: currentNickname } : undefined}
+            initialProfileId={coachProfileId}
+            initialGameId={coachGameId}
+            onReview={(pid, gid) => navigate(`/${pid}/coach/${gid}`)}
+          />
+        )}
 
         {activeTab === 'checker' && (
           <BalanceChecker
@@ -676,6 +729,17 @@ export default App;
 function Footer() {
   return (
     <footer className="mt-16 text-center text-gray-400 text-sm">
+      <div className="mb-4">
+        <a
+          href="https://github.com/jesusnoseq/aoe4friends.win/issues/new"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Send Feedback
+        </a>
+      </div>
       <div>
         Data powered by{' '}
         <a
