@@ -6,7 +6,7 @@ import OpponentsTable from './components/OpponentsTable';
 import CivCharts from './components/CivCharts';
 import { analyzeGames } from './services/aoe4worldAnalysis';
 import { Game, Player } from './services/aoe4worldTypes.request';
-import { fetchGamesWithCache } from './services/aoe4worldRequests';
+import { fetchGamesWithCache, fetchRecentGamesLite } from './services/aoe4worldRequests';
 import { API_BASE_URL } from './services/apiConfig';
 import GameDurationChart from './components/GameDurationChart';
 import MapBarChart from './components/MapBarChart';
@@ -92,6 +92,9 @@ function MainApp() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [stats, setStats] = useState<GameStats | null>(null);
   const [games, setGames] = useState<Game[]>([]);
+  // Whether `games` is the player's full history. Game review loads only recent
+  // games, so this is false until a stats view needs (and triggers) a full load.
+  const [gamesComplete, setGamesComplete] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [suggestions, setSuggestions] = useState<PlayerSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
@@ -131,7 +134,9 @@ function MainApp() {
     }
   }, []);
 
-  // On mount or when profileIdParam changes, load stats if present
+  // On mount or when profileIdParam changes, load stats if present. On the
+  // game-review deep link (a game id in the URL) only the latest games are
+  // loaded; the full history is fetched lazily when a stats view is opened.
   useEffect(() => {
     if (profileIdParam && /^\d+$/.test(profileIdParam)) {
       setProfileId(profileIdParam);
@@ -139,10 +144,20 @@ function MainApp() {
       setSuggestions([]);
       setShowSuggestions(false);
       setError('');
-      loadStats(Number(profileIdParam));
+      if (gameId) loadStatsLite(Number(profileIdParam));
+      else loadStats(Number(profileIdParam));
     }
     // eslint-disable-next-line
   }, [profileIdParam]);
+
+  // Upgrade to the full match history the first time a stats view is opened
+  // after a lightweight (game-review) load.
+  useEffect(() => {
+    if (activeTab === 'stats' && !gamesComplete && currentProfileId !== null && !isLoading) {
+      loadStats(currentProfileId);
+    }
+    // eslint-disable-next-line
+  }, [activeTab, gamesComplete, currentProfileId]);
 
   // Helper to add to recent queries and persist
   function addRecentQuery(name: string, profile_id: number) {
@@ -280,7 +295,47 @@ function MainApp() {
     return undefined;
   }
 
-  // New: shared loader
+  // Apply a fetched games list to all the derived state. `complete` records
+  // whether these games are the full history (see `gamesComplete`).
+  function applyStats(fetchedGames: Game[], id: number, forcedName: string | undefined, complete: boolean) {
+    const analyzed = analyzeGames(fetchedGames, id);
+
+    setGames(fetchedGames);
+    setGamesComplete(complete);
+    setStats({
+      wins: analyzed.wins,
+      losses: analyzed.losses,
+      totalGames: analyzed.totalGames,
+      winRate: analyzed.winRate,
+      civStats: analyzed.civStats,
+      allies: analyzed.allies,
+      opponents: analyzed.opponents,
+      currentStreak: analyzed.currentStreak,
+      maxWinStreak: analyzed.maxWinStreak || analyzed.longestWinStreak,
+      longestWinStreak: analyzed.longestWinStreak,
+      longestLossStreak: analyzed.longestLossStreak,
+      winRateLast10Games: analyzed.winRateLast10,
+      winRateLast50Games: analyzed.winRateLast50,
+      averageGameLength: analyzed.averageGameLength,
+      durationDistribution: analyzed.durationDistribution,
+      mapStats: analyzed.mapStats,
+      longestGame: analyzed.longestGame,
+    });
+
+    const name =
+      forcedName ||
+      selectedSuggestion?.name ||
+      suggestions[0]?.name ||
+      getNicknameFromGames(fetchedGames, id) ||
+      id.toString();
+
+    setCurrentNickname(name);
+    setCurrentProfileId(id);
+    setProfileId(formatProfileLabel(name, id));
+    addRecentQuery(name, id);
+  }
+
+  // New: shared loader — fetches the full match history for the stats views.
   async function loadStats(id: number, forcedName?: string) {
     setIsLoading(true);
     setError('');
@@ -288,40 +343,7 @@ function MainApp() {
 
     try {
       const fetchedGames = await fetchGamesWithCache(id);
-      const analyzed = analyzeGames(fetchedGames, id);
-
-      setGames(fetchedGames);
-      setStats({
-        wins: analyzed.wins,
-        losses: analyzed.losses,
-        totalGames: analyzed.totalGames,
-        winRate: analyzed.winRate,
-        civStats: analyzed.civStats,
-        allies: analyzed.allies,
-        opponents: analyzed.opponents,
-        currentStreak: analyzed.currentStreak,
-        maxWinStreak: analyzed.maxWinStreak || analyzed.longestWinStreak,
-        longestWinStreak: analyzed.longestWinStreak,
-        longestLossStreak: analyzed.longestLossStreak,
-        winRateLast10Games: analyzed.winRateLast10,
-        winRateLast50Games: analyzed.winRateLast50,
-        averageGameLength: analyzed.averageGameLength,
-        durationDistribution: analyzed.durationDistribution,
-        mapStats: analyzed.mapStats,
-        longestGame: analyzed.longestGame,
-      });
-
-      const name =
-        forcedName ||
-        selectedSuggestion?.name ||
-        suggestions[0]?.name ||
-        getNicknameFromGames(fetchedGames, id) ||
-        id.toString();
-
-      setCurrentNickname(name);
-      setCurrentProfileId(id);
-      setProfileId(formatProfileLabel(name, id));
-      addRecentQuery(name, id);
+      applyStats(fetchedGames, id, forcedName, true);
 
       // Update URL if not already there
       if (profileIdParam !== String(id)) {
@@ -329,6 +351,25 @@ function MainApp() {
       }
     } catch (err){
       console.error('Failed to fetch stats', err);
+      setError('Failed to fetch stats. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Lightweight loader for game review: only the most recent games, so a
+  // deep-linked review doesn't page through the player's entire history. A
+  // full load happens later if the user opens a stats view (see effect below).
+  async function loadStatsLite(id: number, forcedName?: string) {
+    setIsLoading(true);
+    setError('');
+    setShowSuggestions(false);
+
+    try {
+      const { games: fetchedGames, complete } = await fetchRecentGamesLite(id);
+      applyStats(fetchedGames, id, forcedName, complete);
+    } catch (err) {
+      console.error('Failed to fetch recent games', err);
       setError('Failed to fetch stats. Please try again.');
     } finally {
       setIsLoading(false);

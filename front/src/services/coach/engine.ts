@@ -6,6 +6,10 @@ import { COACH_RULES } from './rules';
 export interface PlayerReview {
   player: SummaryPlayer;
   findings: Record<CoachTopic, Finding[]>;
+  /** How many rules ran (excluding ones that threw). */
+  checksTotal: number;
+  /** How many of those rules produced no finding (the player passed them). */
+  checksPassed: number;
 }
 
 export interface GameReview {
@@ -23,9 +27,14 @@ export function reviewPlayer(summary: GameSummary, player: SummaryPlayer): Playe
   const findings: Record<CoachTopic, Finding[]> = {
     economy: [], military: [], technology: [], general: [],
   };
+  let checksTotal = 0;
+  let checksPassed = 0;
   for (const rule of COACH_RULES) {
     try {
-      findings[rule.topic].push(...rule.evaluate(ctx));
+      const results = rule.evaluate(ctx);
+      checksTotal++;
+      if (results.length === 0) checksPassed++;
+      findings[rule.topic].push(...results);
     } catch (e) {
       // One misbehaving rule (e.g. on an older summaryVersion) must never
       // take down the whole review.
@@ -35,7 +44,7 @@ export function reviewPlayer(summary: GameSummary, player: SummaryPlayer): Playe
   for (const topic of Object.keys(findings) as CoachTopic[]) {
     findings[topic].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
   }
-  return { player, findings };
+  return { player, findings, checksTotal, checksPassed };
 }
 
 export function reviewGame(summary: GameSummary): GameReview {

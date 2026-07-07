@@ -67,6 +67,36 @@ export async function fetchGamesWithCache(profileId: number): Promise<Game[]> {
   return allGames;
 }
 
+// Lightweight games fetch: the most recent page(s) only, for views that don't
+// need the full match history (e.g. game review). If a full history is already
+// cached it is reused; otherwise only `pages` pages are fetched and — crucially —
+// NOT written to the cache, so a later full load isn't tricked into treating a
+// partial list as complete. `complete` is true when the returned games are the
+// player's whole history (from cache, or because the last page was reached).
+export async function fetchRecentGamesLite(
+  profileId: number,
+  pages = 1,
+): Promise<{ games: Game[]; complete: boolean }> {
+  const cacheKey = `aoe4friends_games_${profileId}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    const cachedGames: Game[] = JSON.parse(LZString.decompress(cached) || "[]");
+    return { games: cachedGames, complete: true };
+  }
+
+  let games: Game[] = [];
+  for (let page = 1; page <= pages; page++) {
+    const url = `${API_BASE_URL}/v0/players/${profileId}/games?page=${page}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Failed to fetch games');
+    const data = await resp.json();
+    if (!data.games?.length) break;
+    games = games.concat(data.games);
+    if (data.total_count <= data.page * data.per_page) return { games, complete: true };
+  }
+  return { games, complete: false };
+}
+
 // --- CBT (Create Balanced Teams) helpers ---
 
 export interface CBTPlayerProfile {

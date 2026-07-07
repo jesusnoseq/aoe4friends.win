@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Search } from 'lucide-react';
 import Spinner from './Spinner';
 import CoachPlayerReview from './CoachPlayerReview';
+import CoachGamePicker from './CoachGamePicker';
 import { parsePlayerGameUrl, fetchGameSummary, fetchLatestFinishedGameSummary } from '../services/coach/summaryService';
 import { reviewGame, type GameReview } from '../services/coach/engine';
 import { formatGameTime } from '../services/coach/context';
@@ -38,6 +39,7 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
     loadedKey.current = key;
 
     let cancelled = false;
+    let finished = false;
     setLoading(true);
     setError('');
     setReview(null);
@@ -50,7 +52,7 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
         .catch(() => {
           if (!cancelled) setError(`Could not load a summary for game ${initialGameId}. Older games and ongoing games may not have one.`);
         })
-        .finally(() => { if (!cancelled) setLoading(false); });
+        .finally(() => { finished = true; if (!cancelled) setLoading(false); });
     } else {
       setAutoLoading(true);
       fetchLatestFinishedGameSummary(currentPlayer!.profile_id)
@@ -58,10 +60,39 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
         .catch(() => {
           if (!cancelled) setError(`Couldn't load the summary of ${currentPlayer!.name}'s latest games. Paste a game URL below instead.`);
         })
-        .finally(() => { if (!cancelled) { setLoading(false); setAutoLoading(false); } });
+        .finally(() => { finished = true; if (!cancelled) { setLoading(false); setAutoLoading(false); } });
     }
-    return () => { cancelled = true; };
+    // If this load is torn down before it finished (e.g. StrictMode's dev
+    // remount), forget the key so the next run re-fetches instead of bailing on
+    // the guard and leaving `loading` stuck true.
+    return () => {
+      cancelled = true;
+      if (!finished) loadedKey.current = '';
+    };
   }, [currentPlayer?.profile_id, initialProfileId, initialGameId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load a game directly (used when there is no router to drive the effect).
+  async function loadGameDirect(profileId: number, gameId: number) {
+    setLoading(true);
+    setError('');
+    setReview(null);
+    setAutoLoaded(false);
+    try {
+      const summary = await fetchGameSummary(profileId, gameId);
+      setReview(reviewGame(summary));
+    } catch {
+      setError(`Could not load a summary for game ${gameId}. Older games and ongoing games may not have one.`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Prefer the parent's router (updates the URL; the effect above loads it);
+  // fall back to loading in place when there is no router.
+  function selectGame(profileId: number, gameId: number) {
+    if (onReview) onReview(profileId, gameId);
+    else loadGameDirect(profileId, gameId);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -75,24 +106,11 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
       setError('Paste the full aoe4world game URL (including the /players/... part) or select a profile first.');
       return;
     }
-    // Let the parent update the route; the effect above loads the game.
-    if (onReview) {
-      onReview(profileId, parsed.gameId);
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setReview(null);
-    setAutoLoaded(false);
-    try {
-      const summary = await fetchGameSummary(profileId, parsed.gameId);
-      setReview(reviewGame(summary));
-    } catch {
-      setError(`Could not load a summary for game ${parsed.gameId}. Older games and ongoing games may not have one.`);
-    } finally {
-      setLoading(false);
-    }
+    selectGame(profileId, parsed.gameId);
   }
+
+  const pickerProfileId = initialProfileId ?? currentPlayer?.profile_id;
+  const currentGameId = review?.gameId ?? initialGameId;
 
   return (
     <div className="w-full space-y-4">
@@ -125,6 +143,14 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
         </form>
         {error && <p className="mt-2 text-red-400 text-sm">{error}</p>}
       </div>
+
+      {pickerProfileId !== undefined && (
+        <CoachGamePicker
+          profileId={pickerProfileId}
+          currentGameId={currentGameId}
+          onSelect={gameId => selectGame(pickerProfileId, gameId)}
+        />
+      )}
 
       {loading && (
         <div className="flex flex-col items-center justify-center gap-3 py-8">

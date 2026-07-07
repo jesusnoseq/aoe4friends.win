@@ -108,6 +108,68 @@ export async function fetchGameSummary(profileId: number, gameId: number): Promi
   return summary;
 }
 
+// A lightweight row for the "review another game" picker — just enough to
+// describe a game without fetching its (~1MB) summary.
+export interface RecentGame {
+  gameId: number;
+  map?: string;
+  leaderboard?: string;
+  startedAt?: string;
+  duration?: number;
+  result?: string;
+  civilization?: string;
+  opponents: string[];
+}
+
+interface RawListPlayer {
+  profile_id: number;
+  name: string;
+  result?: string | null;
+  civilization?: string | null;
+}
+
+interface RawListGame {
+  game_id: number;
+  map?: string;
+  kind?: string;
+  leaderboard?: string;
+  started_at?: string;
+  duration?: number;
+  ongoing?: boolean;
+  teams?: Array<Array<{ player: RawListPlayer }>>;
+}
+
+// Recent finished games of the player, newest first. Ongoing games are skipped
+// because they have no summary to review.
+export async function fetchRecentFinishedGames(profileId: number, limit = 15): Promise<RecentGame[]> {
+  const res = await fetch(`${API_BASE_URL}/v0/players/${profileId}/games?page=1`);
+  if (!res.ok) throw new Error(`Failed to fetch games of player ${profileId}`);
+  const data = await res.json();
+  const games = (data.games as RawListGame[] | undefined) ?? [];
+  const out: RecentGame[] = [];
+  for (const g of games) {
+    if (g.ongoing) continue;
+    const teams = g.teams ?? [];
+    const myTeam = teams.find(team => team.some(t => t.player.profile_id === profileId));
+    const me = myTeam?.find(t => t.player.profile_id === profileId)?.player;
+    const opponents = teams
+      .filter(team => team !== myTeam)
+      .flatMap(team => team.map(t => t.player.name));
+    out.push({
+      gameId: g.game_id,
+      map: g.map,
+      leaderboard: g.leaderboard ?? g.kind,
+      startedAt: g.started_at,
+      duration: g.duration,
+      result: me?.result ?? undefined,
+      civilization: me?.civilization ?? undefined,
+      opponents,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 // Latest finished game of the player; if its summary is unavailable, try the
 // one before it. No further attempts (by design).
 export async function fetchLatestFinishedGameSummary(profileId: number): Promise<GameSummary> {

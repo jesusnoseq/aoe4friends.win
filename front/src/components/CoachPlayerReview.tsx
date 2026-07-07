@@ -44,9 +44,10 @@ interface Props {
 }
 
 export default function CoachPlayerReview({ review, highlight }: Props) {
-  const { player, findings } = review;
+  const { player, findings, checksTotal, checksPassed } = review;
   const total = TOPICS.reduce((n, t) => n + findings[t.topic].length, 0);
   const won = player.result === 'win';
+  const allPassed = checksPassed === checksTotal;
 
   return (
     <div className={`bg-gray-800 rounded-lg p-4 shadow-xl border ${highlight ? 'border-blue-500/60' : 'border-gray-700/40'}`}>
@@ -58,8 +59,14 @@ export default function CoachPlayerReview({ review, highlight }: Props) {
             {won ? 'Victory' : 'Defeat'}
           </span>
         )}
+        <span
+          className={`ml-auto px-2 py-0.5 rounded text-[11px] font-semibold ${allPassed ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-300'}`}
+          title="Coaching checks this player passed (a check passes when the rule found no issue)"
+        >
+          {checksPassed}/{checksTotal} checks pass
+        </span>
         {player.apm !== undefined && (
-          <span className="ml-auto text-xs text-gray-500">{player.apm} APM</span>
+          <span className="text-xs text-gray-500">{player.apm} APM</span>
         )}
       </div>
 

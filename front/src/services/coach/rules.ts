@@ -163,7 +163,7 @@ const lateEconUpgrades: CoachRule = {
         title: 'Late economic upgrades',
         detail:
           `${lateOnes.length} gather-rate upgrade${lateOnes.length > 1 ? 's were' : ' was'} researched more than ` +
-          `${formatGameTime(cfg.lateAfterSeconds)} after the age that unlocks them. Buy them right after aging up.`,
+          `${formatGameTime(cfg.lateAfterSeconds)} after the age that unlocks them.`,
         timestamps: lateOnes.map(u => u.time),
       });
     }
