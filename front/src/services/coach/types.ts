@@ -41,4 +41,9 @@ export interface ResourceSeries {
   gold?: number[];
   stone?: number[];
   wood?: number[];
+  // Fifth resource, stored in the API's "oliveoil" slot for both Byzantines
+  // (olive oil) and their Macedonian variant (silver). Only present for civs
+  // that use it, and even then the time series may be missing while totals are
+  // reported (e.g. Macedonians expose oliveoilGathered but no oliveoil series).
+  oliveoil?: number[];
 }

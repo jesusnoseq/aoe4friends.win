@@ -52,9 +52,13 @@ export function iconBasename(icon: string): string {
   return i >= 0 ? icon.slice(i + 1) : icon;
 }
 
-const TIER_SUFFIX = /_([1-4])$/;
+// Trailing tier marker. Covers the classic "_2".."_4" form and the newer
+// civ-specific "_age2" / "_age_3" forms (Byzantine, Macedonian, Golden Horde,
+// Knights Templar). e.g. "archer_2", "bogmadr_age2", "templar_brother_age_3".
+const TIER_SUFFIX = /_(?:age_?)?([1-4])$/;
 
 // "archer_2" -> { base: "archer", tier: 2, hasTierSuffix: true }
+// "bogmadr_age2" -> { base: "bogmadr", tier: 2, hasTierSuffix: true }
 export function stripTier(basename: string): { base: string; tier: 1 | 2 | 3 | 4; hasTierSuffix: boolean } {
   const m = basename.match(TIER_SUFFIX);
   if (!m) return { base: basename, tier: 1, hasTierSuffix: false };
@@ -66,7 +70,7 @@ function matchesAnyKeyword(base: string, keywords: string[]): boolean {
 }
 
 export function classifyUnitBase(base: string): UnitClass {
-  const order: Array<Exclude<UnitClass, 'other'>> = ['villager', 'siege', 'cavalry', 'ranged', 'melee'];
+  const order: Array<Exclude<UnitClass, 'other'>> = ['villager', 'naval', 'siege', 'cavalry', 'ranged', 'melee'];
   for (const cls of order) {
     if (matchesAnyKeyword(base, UNIT_KEYWORDS[cls])) return cls;
   }
@@ -115,14 +119,25 @@ export function buildPlayerContext(summary: GameSummary, player: SummaryPlayer):
     return times.sort((a, b) => a - b);
   };
 
+  // Some entries are mislabeled upstream: a few buildings (e.g. the Knights
+  // Templar 'fortress') arrive with type "Unit" but carry a constructed[]
+  // timeline and no finished[]. Classify by shape, not just the declared type.
+  const hasConstructed = (e: BuildOrderEntry) => (e.constructed?.length ?? 0) > 0;
+  const isBuildingEntry = (e: BuildOrderEntry) => e.type === 'Building' || hasConstructed(e);
+  const isUnitEntry = (e: BuildOrderEntry) => e.type === 'Unit' && !hasConstructed(e);
+
   const entriesByIconKeyword = (keywords: string[], type?: string): BuildOrderEntry[] =>
     buildOrder.filter(e => {
-      if (type && e.type !== type) return false;
+      if (type === 'Building') {
+        if (!isBuildingEntry(e)) return false;
+      } else if (type && e.type !== type) {
+        return false;
+      }
       return matchesAnyKeyword(iconBasename(e.icon), keywords);
     });
 
   const classifiedUnits: ClassifiedUnit[] = buildOrder
-    .filter(e => e.type === 'Unit')
+    .filter(isUnitEntry)
     .map(e => {
       const { base, tier, hasTierSuffix } = stripTier(iconBasename(e.icon));
       return { entry: e, base, unitClass: classifyUnitBase(base), tier, hasTierSuffix };
@@ -160,7 +175,7 @@ export function buildPlayerContext(summary: GameSummary, player: SummaryPlayer):
     classifiedUnits.flatMap(u => u.entry.destroyed ?? []),
   );
 
-  const militaryClasses: UnitClass[] = ['melee', 'ranged', 'cavalry', 'siege'];
+  const militaryClasses: UnitClass[] = ['melee', 'ranged', 'cavalry', 'siege', 'naval'];
   const militaryUnitTimes = classifiedUnits
     .filter(u => militaryClasses.includes(u.unitClass))
     .flatMap(u => u.entry.finished ?? [])

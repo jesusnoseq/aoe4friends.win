@@ -1,17 +1,26 @@
 // Shared unit/building classification used by the context builder and the
 // rules. Per-rule thresholds live next to each rule in rules.ts.
 
-export type UnitClass = 'villager' | 'siege' | 'cavalry' | 'ranged' | 'melee' | 'other';
+export type UnitClass = 'villager' | 'naval' | 'siege' | 'cavalry' | 'ranged' | 'melee' | 'other';
 
-// Matched against the icon basename with the tier suffix (_2/_3/_4) stripped,
-// e.g. "icons/races/common/units/archer_2" -> "archer". First class that
-// matches wins, in this order: villager, siege, cavalry, ranged, melee.
+// Matched against the icon basename with the tier suffix (_2/_3/_4, and the
+// civ-specific _age2/_age_3 variants) stripped, e.g.
+// "icons/races/common/units/archer_2" -> "archer". First class that matches
+// wins, in this order: villager, naval, siege, cavalry, ranged, melee.
 // Unmatched units fall to 'other' and are simply not judged.
 export const UNIT_KEYWORDS: Record<Exclude<UnitClass, 'other'>, string[]> = {
   villager: ['villager'],
+  // Warships. Transport ships carry no combat role and are deliberately left
+  // to 'other'; fishing boats are economic (see ECON_UNIT_KEYWORDS).
+  naval: [
+    'galley', 'fireship', 'junk', 'warship', 'general_ship', 'baghlah',
+    'dhow', 'carrack', 'hulk', 'xebec', 'lodya', 'demolition_ship',
+  ],
   siege: [
     'ram', 'mangonel', 'springald', 'trebuchet', 'bombard', 'culverin',
     'ribauldequin', 'nest_of_bees', 'cannon', 'scorpion', 'siege_tower',
+    // Byzantine flame-siege weapon.
+    'chierosiphon',
   ],
   cavalry: [
     'horseman', 'knight', 'lancer', 'camel_rider', 'camel_lancer', 'keshik',
@@ -20,16 +29,23 @@ export const UNIT_KEYWORDS: Record<Exclude<UnitClass, 'other'>, string[]> = {
     // Tughluq war elephants (mounted). healer_elephant is also religious
     // (see RELIGIOUS_UNIT_KEYWORDS).
     'elephant_raider', 'healer_elephant',
+    // Abbasid mameluke (camel), Malian sofa lancer, Knights Templar mounted
+    // units (chevalier confrere, templar brother, szlachta).
+    'mameluke', 'sofa', 'chevalier', 'templar_brother', 'szlachta',
   ],
   ranged: [
     'archer', 'crossbow', 'arbaletrier', 'longbow', 'zhuge_nu', 'handcannon',
     'mangudai', 'javelin', 'grenadier', 'streltsy', 'gunner', 'yumi',
     'tanegashima', 'bogmadr', 'jannisary', 'wynguard_ranger',
+    // Golden Horde mounted archer (like mangudai, judged as ranged).
+    'kipchak',
   ],
   melee: [
     'spearman', 'manatarms', 'landsknecht', 'landskrecht', 'samurai',
     'palace_guard', 'ghulam', 'donso', 'musofadi', 'zhanmadao', 'limitanei',
     'varangian', 'yari', 'torguud', 'kharash',
+    // Macedonian atgeir infantry, Knights Templar serjeant.
+    'atgeir', 'serjeant',
     // Shaolin monk fights in melee and is also religious (see below).
     'shaolin_monk',
   ],
@@ -49,11 +65,14 @@ export const ECON_UNIT_KEYWORDS = ['villager', 'trader', 'trade_cart', 'fishing_
 // Note: varangian_arsenal is the Macedonian blacksmith equivalent, not a
 // production building, so it is deliberately absent.
 // military_school is the Ottoman unit-producing building (auto-trains units).
+// machine_workshop is the Jin siege-production building; golden_tent is the
+// Golden Horde's special (mobile) military building, not a town center.
 export const MILITARY_BUILDING_KEYWORDS = [
   'barracks', 'archery_range', 'stable', 'siege_workshop',
   'varangian_stronghold', 'warcamp', 'military_academy', 'stockyard',
-  'military_school',
+  'military_school', 'machine_workshop', 'golden_tent',
 ];
 
-// Town centers (icon basename keywords).
-export const TC_KEYWORDS = ['town_center', 'town_centre_capitol'];
+// Town centers (icon basename keywords). Zhu Xi's Legacy 'village' trains
+// villagers and acts as a secondary town center.
+export const TC_KEYWORDS = ['town_center', 'town_centre_capitol', 'village'];

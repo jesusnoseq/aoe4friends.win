@@ -208,10 +208,13 @@ const outdatedUnits: CoachRule = {
     const findings: Finding[] = [];
 
     const upgradeFinishTime = (base: string, tier: number): number | undefined => {
-      const wanted = `${base}_${tier}`;
+      // Two naming conventions for the tier upgrade: the classic "{base}_{tier}"
+      // and the civ-specific "{base}_upgrade_age{tier}" (Byzantine, Macedonian,
+      // Golden Horde, Knights Templar).
+      const wanted = [`${base}_${tier}`, `${base}_upgrade_age${tier}`];
       for (const e of ctx.player.buildOrder ?? []) {
         if (e.type !== 'Upgrade') continue;
-        if (iconBasename(e.icon) !== wanted) continue;
+        if (!wanted.includes(iconBasename(e.icon))) continue;
         const t = e.finished?.[0] ?? e.constructed?.[0];
         if (t !== undefined) return t;
       }
@@ -554,8 +557,16 @@ export const FLOATING_RESOURCES_CONFIG = {
   ageUpSavingFoodGoldShare: 0.7,
 };
 
-const RESOURCE_NAMES = ['food', 'wood', 'gold', 'stone'] as const;
+const RESOURCE_NAMES = ['food', 'wood', 'gold', 'stone', 'oliveoil'] as const;
 type ResourceName = (typeof RESOURCE_NAMES)[number];
+
+// User-facing resource label. The fifth resource lives in the API's "oliveoil"
+// slot for both Byzantines and their Macedonian variant, but Macedonians gather
+// silver, not olive oil — label it per civ.
+function resourceLabel(name: ResourceName, civilization: string): string {
+  if (name === 'oliveoil') return civilization === 'macedonian_dynasty' ? 'silver' : 'olive oil';
+  return name;
+}
 
 interface FloatWindow {
   start: number;
@@ -619,7 +630,7 @@ const floatingResources: CoachRule = {
     const worst = flagged.reduce((a, b) => (b.peakTotal > a.peakTotal ? b : a));
     const dominant = RESOURCE_NAMES
       .filter(n => worst.peakByResource[n] >= worst.peakTotal * cfg.dominantResourceShare)
-      .map(n => `${n} (~${worst.peakByResource[n]})`);
+      .map(n => `${resourceLabel(n, ctx.player.civilization)} (~${worst.peakByResource[n]})`);
     const longest = Math.max(...flagged.map(w => w.end - w.start));
 
     return [{
