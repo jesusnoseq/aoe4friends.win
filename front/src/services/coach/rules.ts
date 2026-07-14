@@ -867,6 +867,8 @@ const idleVillagers: CoachRule = {
 export const APM_CONFIG = {
   good: 100,
   bad: 70,
+  learnBelow: 50, // below this, nudge to actively train (don't sleep in the seat)
+  learnUrl: 'https://aoe-aegis.vercel.app/',
 };
 
 const lowApm: CoachRule = {
@@ -875,12 +877,17 @@ const lowApm: CoachRule = {
   evaluate(ctx) {
     const apm = ctx.player.apm;
     if (apm === undefined || apm >= APM_CONFIG.good) return [];
+    const critical = apm < APM_CONFIG.bad;
+    const veryLow = apm < APM_CONFIG.learnBelow;
+    const detail = `${apm} actions per minute (aim for at least ${APM_CONFIG.good}). Practice hotkeys and a production/economy camera cycle to act faster.`;
     return [{
       ruleId: this.id,
       topic: this.topic,
-      severity: apm < APM_CONFIG.bad ? 'critical' : 'warning',
+      severity: critical ? 'critical' : 'warning',
       title: 'Low APM',
-      detail: `${apm} actions per minute (aim for at least ${APM_CONFIG.good}). Practice hotkeys and a production/economy camera cycle to act faster.`,
+      // Under 50 APM means idle hands — call it out and point to training drills.
+      detail: veryLow ? `${detail} Don't sleep in the seat — stay busy every second.` : detail,
+      link: veryLow ? { url: APM_CONFIG.learnUrl, label: 'Learn hotkeys & APM drills' } : undefined,
     }];
   },
 };

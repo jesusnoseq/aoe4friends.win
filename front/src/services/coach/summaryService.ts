@@ -119,6 +119,7 @@ export interface RecentGame {
   result?: string;
   civilization?: string;
   opponents: string[];
+  ongoing?: boolean;
 }
 
 interface RawListPlayer {
@@ -139,16 +140,21 @@ interface RawListGame {
   teams?: Array<Array<{ player: RawListPlayer }>>;
 }
 
-// Recent finished games of the player, newest first. Ongoing games are skipped
-// because they have no summary to review.
-export async function fetchRecentFinishedGames(profileId: number, limit = 15): Promise<RecentGame[]> {
+// Recent games of the player, newest first. Ongoing games are skipped by default
+// (they have no summary to review); pass `includeOngoing` to keep them (e.g. for
+// the balance checker, which can inspect a live game).
+export async function fetchRecentFinishedGames(
+  profileId: number,
+  limit = 15,
+  includeOngoing = false,
+): Promise<RecentGame[]> {
   const res = await fetch(`${API_BASE_URL}/v0/players/${profileId}/games?page=1`);
   if (!res.ok) throw new Error(`Failed to fetch games of player ${profileId}`);
   const data = await res.json();
   const games = (data.games as RawListGame[] | undefined) ?? [];
   const out: RecentGame[] = [];
   for (const g of games) {
-    if (g.ongoing) continue;
+    if (g.ongoing && !includeOngoing) continue;
     const teams = g.teams ?? [];
     const myTeam = teams.find(team => team.some(t => t.player.profile_id === profileId));
     const me = myTeam?.find(t => t.player.profile_id === profileId)?.player;
@@ -164,6 +170,7 @@ export async function fetchRecentFinishedGames(profileId: number, limit = 15): P
       result: me?.result ?? undefined,
       civilization: me?.civilization ?? undefined,
       opponents,
+      ongoing: g.ongoing,
     });
     if (out.length >= limit) break;
   }

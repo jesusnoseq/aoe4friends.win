@@ -33,6 +33,16 @@ function FindingRow({ finding }: { finding: Finding }) {
             ))}
           </p>
         )}
+        {finding.link && (
+          <a
+            href={finding.link.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 inline-block text-xs font-medium text-blue-400 hover:text-blue-300 underline"
+          >
+            {finding.link.label} →
+          </a>
+        )}
       </div>
     </li>
   );

@@ -9,6 +9,8 @@ interface Props {
   /** Game currently being reviewed, highlighted in the list. */
   currentGameId?: number;
   onSelect: (gameId: number) => void;
+  /** Include ongoing/live games in the list (default: finished games only). */
+  includeOngoing?: boolean;
 }
 
 function formatDate(iso?: string): string {
@@ -18,7 +20,7 @@ function formatDate(iso?: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function CoachGamePicker({ profileId, currentGameId, onSelect }: Props) {
+export default function CoachGamePicker({ profileId, currentGameId, onSelect, includeOngoing = false }: Props) {
   const [games, setGames] = useState<RecentGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,12 +29,12 @@ export default function CoachGamePicker({ profileId, currentGameId, onSelect }: 
     let cancelled = false;
     setLoading(true);
     setError('');
-    fetchRecentFinishedGames(profileId)
+    fetchRecentFinishedGames(profileId, undefined, includeOngoing)
       .then(list => { if (!cancelled) setGames(list); })
       .catch(() => { if (!cancelled) setError('Could not load recent games.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [profileId]);
+  }, [profileId, includeOngoing]);
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700/40">
@@ -80,6 +82,11 @@ export default function CoachGamePicker({ profileId, currentGameId, onSelect }: 
                       <span className="text-gray-500"> vs {g.opponents.join(', ')}</span>
                     )}
                   </span>
+                  {g.ongoing && (
+                    <span className="px-1.5 py-0.5 rounded bg-yellow-900 text-yellow-300 text-xs font-semibold shrink-0">
+                      ⏳ Live
+                    </span>
+                  )}
                   {g.civilization && (
                     <span className="hidden sm:inline text-xs text-gray-400 shrink-0">
                       {prettyName(g.civilization)}

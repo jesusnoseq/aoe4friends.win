@@ -11,6 +11,7 @@ export interface Finding {
   title: string; // short label, e.g. "Idle Town Center time"
   detail: string; // specifics with numbers
   timestamps?: number[]; // game-time seconds, rendered as mm:ss
+  link?: { url: string; label: string }; // optional learn-more resource
 }
 
 // A coach rule inspects one player's data and returns zero or more findings.

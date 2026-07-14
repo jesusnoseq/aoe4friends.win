@@ -3,6 +3,7 @@ import { Scale, Search } from 'lucide-react';
 import { type CheckedGame, parseGameId, fetchGameForBalanceCheck, fetchLastGameForBalanceCheck } from '../services/aoe4worldRequests';
 import Spinner from './Spinner';
 import TeamsDisplay from './TeamsDisplay';
+import CoachGamePicker from './CoachGamePicker';
 
 interface Props {
   currentPlayer?: { profile_id: number; name: string };
@@ -33,6 +34,19 @@ export default function BalanceChecker({ currentPlayer }: Props) {
       .finally(() => { if (!cancelled) { setLoading(false); setAutoLoading(false); } });
     return () => { cancelled = true; };
   }, [currentPlayer?.profile_id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleSelectGame(gameId: number) {
+    setLoading(true);
+    setError('');
+    setAutoLoaded(false);
+    try {
+      setGame(await fetchGameForBalanceCheck(gameId));
+    } catch {
+      setError(`Could not load game ${gameId}. Check the ID and try again.`);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -84,6 +98,15 @@ export default function BalanceChecker({ currentPlayer }: Props) {
         </form>
         {error && <p className="mt-2 text-red-400 text-sm">{error}</p>}
       </div>
+
+      {currentPlayer && (
+        <CoachGamePicker
+          profileId={currentPlayer.profile_id}
+          currentGameId={game?.game_id}
+          onSelect={handleSelectGame}
+          includeOngoing
+        />
+      )}
 
       {loading && (
         <div className="flex flex-col items-center justify-center gap-3 py-8">
