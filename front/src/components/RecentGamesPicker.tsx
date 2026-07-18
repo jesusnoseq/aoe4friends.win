@@ -20,7 +20,7 @@ function formatDate(iso?: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export default function CoachGamePicker({ profileId, currentGameId, onSelect, includeOngoing = false }: Props) {
+export default function RecentGamesPicker({ profileId, currentGameId, onSelect, includeOngoing = false }: Props) {
   const [games, setGames] = useState<RecentGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

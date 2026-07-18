@@ -3,7 +3,7 @@ import { Scale, Search } from 'lucide-react';
 import { type CheckedGame, parseGameId, fetchGameForBalanceCheck, fetchLastGameForBalanceCheck } from '../services/aoe4worldRequests';
 import Spinner from './Spinner';
 import TeamsDisplay from './TeamsDisplay';
-import CoachGamePicker from './CoachGamePicker';
+import RecentGamesPicker from './RecentGamesPicker';
 
 interface Props {
   currentPlayer?: { profile_id: number; name: string };
@@ -100,7 +100,7 @@ export default function BalanceChecker({ currentPlayer }: Props) {
       </div>
 
       {currentPlayer && (
-        <CoachGamePicker
+        <RecentGamesPicker
           profileId={currentPlayer.profile_id}
           currentGameId={game?.game_id}
           onSelect={handleSelectGame}

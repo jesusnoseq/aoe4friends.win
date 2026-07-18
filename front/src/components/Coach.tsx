@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Search } from 'lucide-react';
 import Spinner from './Spinner';
 import CoachPlayerReview from './CoachPlayerReview';
-import CoachGamePicker from './CoachGamePicker';
+import RecentGamesPicker from './RecentGamesPicker';
 import { parsePlayerGameUrl, fetchGameSummary, fetchLatestFinishedGameSummary } from '../services/coach/summaryService';
 import { reviewGame, type GameReview } from '../services/coach/engine';
 import { formatGameTime } from '../services/coach/context';
@@ -145,7 +145,7 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
       </div>
 
       {pickerProfileId !== undefined && (
-        <CoachGamePicker
+        <RecentGamesPicker
           profileId={pickerProfileId}
           currentGameId={currentGameId}
           onSelect={gameId => selectGame(pickerProfileId, gameId)}
