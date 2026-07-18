@@ -242,7 +242,7 @@ export default function StatsPage({ stats, games, profileId, nickname }: Props) 
       {/* Civilization Performance */}
       <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
         <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
-        <CivCharts stats={stats} />
+        <CivCharts stats={stats} games={games} profileId={profileId} />
       </div>
 
       {/* Game Duration Distribution Section */}
