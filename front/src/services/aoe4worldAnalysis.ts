@@ -194,6 +194,21 @@ export const LEADERBOARD_LABELS: { [rawKey: string]: string } = {
   qm_ffa: 'FFA',
 };
 
+// Human-readable label for a raw leaderboard/kind string (e.g. "qm_4v4" ->
+// "Quick Match 4v4"). Falls back to a generic prettifier for ladders not in
+// LEADERBOARD_LABELS so unknown modes still render sensibly.
+export function formatLeaderboard(raw: string | null | undefined): string {
+  if (!raw) return 'Unknown';
+  const known = LEADERBOARD_LABELS[raw];
+  if (known) return known;
+  return raw
+    .replace(/^rm_/, 'Ranked ')
+    .replace(/^qm_/, 'Quick Match ')
+    .replace(/_ew\b/, ' EW')
+    .replace(/_/g, ' ')
+    .trim();
+}
+
 // Row grouping + display order for the rating-chart filter pills: one row per
 // entry. Ranked on the first row, Quick Match on the second, Empire Wars & FFA
 // on the third. Rows/labels with no data for a player are hidden by the chart.

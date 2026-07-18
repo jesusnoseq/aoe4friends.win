@@ -6,6 +6,7 @@ import RecentGamesPicker from './RecentGamesPicker';
 import { parsePlayerGameUrl, fetchGameSummary, fetchLatestFinishedGameSummary } from '../services/coach/summaryService';
 import { reviewGame, type GameReview } from '../services/coach/engine';
 import { formatGameTime } from '../services/coach/context';
+import { formatLeaderboard } from '../services/aoe4worldAnalysis';
 
 interface Props {
   currentPlayer?: { profile_id: number; name: string };
@@ -170,7 +171,7 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
               <span className="text-blue-300">Latest game of <strong>{currentPlayer.name}</strong></span>
             )}
             {review.mapName && <span>Map: <strong className="text-white">{review.mapName}</strong></span>}
-            {review.leaderboard && <span>Mode: <strong className="text-white">{review.leaderboard}</strong></span>}
+            {review.leaderboard && <span>Mode: <strong className="text-white">{formatLeaderboard(review.leaderboard)}</strong></span>}
             <span>Duration: <strong className="text-white">{formatGameTime(review.duration)}</strong></span>
             <span>Game: <strong className="text-white">#{review.gameId}</strong></span>
           </div>

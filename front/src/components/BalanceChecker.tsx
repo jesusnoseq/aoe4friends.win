@@ -4,6 +4,7 @@ import { type CheckedGame, parseGameId, fetchGameForBalanceCheck, fetchLastGameF
 import Spinner from './Spinner';
 import TeamsDisplay from './TeamsDisplay';
 import RecentGamesPicker from './RecentGamesPicker';
+import { formatLeaderboard } from '../services/aoe4worldAnalysis';
 
 interface Props {
   currentPlayer?: { profile_id: number; name: string };
@@ -126,7 +127,7 @@ export default function BalanceChecker({ currentPlayer }: Props) {
               <span className="text-blue-300">Latest game of <strong>{currentPlayer.name}</strong></span>
             )}
             <span>Map: <strong className="text-white">{game.map}</strong></span>
-            <span>Mode: <strong className="text-white">{game.leaderboard}</strong></span>
+            <span>Mode: <strong className="text-white">{formatLeaderboard(game.leaderboard)}</strong></span>
             <span>Game: <strong className="text-white">#{game.game_id}</strong></span>
             {game.ongoing && (
               <span className="px-2 py-0.5 rounded bg-yellow-900 text-yellow-300 text-xs font-semibold">⏳ Ongoing</span>
