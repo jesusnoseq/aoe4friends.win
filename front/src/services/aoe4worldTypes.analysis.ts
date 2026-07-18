@@ -50,6 +50,23 @@ export type DurationDistribution = {
   veryLong: number;
 };
 
+export interface CivComboStat {
+  myCiv: string;    // raw civ key, e.g. "abbasid_dynasty"
+  allyCiv: string;
+  games: number;
+  wins: number;
+  losses: number;
+}
+
+export interface AllyComboStats {
+  profileId: number;
+  name: string;
+  totalGames: number;  // games together with this ally (in the selected mode)
+  wins: number;
+  losses: number;
+  combos: CivComboStat[];  // sorted by games desc, then win rate desc
+}
+
 export interface RatingPoint {
   gameId: number;
   startedAt: string;      // ISO string

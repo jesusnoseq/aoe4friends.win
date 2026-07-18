@@ -3,6 +3,7 @@ import { Trophy, Swords, Users2, Flame, Clock, Hourglass, Crown, BarChart2 } fro
 import AlliesTable from '../components/AlliesTable';
 import OpponentsTable from '../components/OpponentsTable';
 import CivCharts from '../components/CivCharts';
+import TeamPerformance from '../components/TeamPerformance';
 import GameDurationChart from '../components/GameDurationChart';
 import MapBarChart from '../components/MapBarChart';
 import RatingProgressionChart from '../components/RatingProgressionChart';
@@ -243,6 +244,12 @@ export default function StatsPage({ stats, games, profileId, nickname }: Props) 
       <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
         <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
         <CivCharts stats={stats} games={games} profileId={profileId} />
+      </div>
+
+      {/* Team Performance */}
+      <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
+        <h3 className="text-xl font-semibold mb-4">Team Performance</h3>
+        <TeamPerformance games={games} profileId={profileId} />
       </div>
 
       {/* Game Duration Distribution Section */}

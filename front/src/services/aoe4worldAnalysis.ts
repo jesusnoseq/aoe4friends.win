@@ -1,4 +1,4 @@
-import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution, RatingProgression, RatingPoint } from './aoe4worldTypes.analysis';
+import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution, RatingProgression, RatingPoint, AllyComboStats, CivComboStat } from './aoe4worldTypes.analysis';
 import { Game, Player } from './aoe4worldTypes.request';
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
@@ -270,4 +270,100 @@ export function buildRatingProgression(games: Game[], profileId: number): Rating
   }
 
   return { byLeaderboard };
+}
+
+/**
+ * Aggregates per-ally civilization-combo performance: for each teammate, how
+ * (my civ + their civ) pairs performed in games where they were on my team.
+ * `modeLabel` is a normalized leaderboard name (see LEADERBOARD_LABELS) or
+ * 'all'. Returns the top `topN` allies by games played together; a game with a
+ * missing civilization still counts toward games together but yields no combo.
+ * Allies with fewer than `minGames` games together are dropped. As elsewhere,
+ * anything other than a 'win' result counts as a loss so totals match the
+ * allies table. Pure function — no side effects.
+ */
+export function buildAllyCivCombos(
+  games: Game[],
+  profileId: number,
+  modeLabel: string = 'all',
+  topN: number = 20,
+  minGames: number = 3
+): AllyComboStats[] {
+  interface Acc {
+    name: string;
+    games: number;
+    wins: number;
+    losses: number;
+    combos: Map<string, { games: number; wins: number; losses: number }>;
+  }
+  const allies = new Map<number, Acc>();
+
+  for (const game of games) {
+    if (modeLabel !== 'all' && LEADERBOARD_LABELS[String(game.leaderboard || game.kind)] !== modeLabel) continue;
+
+    let playerInfo: Player | null = null;
+    let playerTeamIndex = -1;
+    for (let tIdx = 0; tIdx < game.teams.length; tIdx++) {
+      for (const member of game.teams[tIdx]) {
+        if (member.player.profile_id === profileId) {
+          playerInfo = member.player;
+          playerTeamIndex = tIdx;
+          break;
+        }
+      }
+      if (playerInfo) break;
+    }
+    if (!playerInfo) continue;
+
+    const playerWon = playerInfo.result === 'win';
+    const seen = new Set<number>();
+    for (const member of game.teams[playerTeamIndex]) {
+      const other = member.player;
+      if (other.profile_id === profileId || seen.has(other.profile_id)) continue;
+      seen.add(other.profile_id);
+
+      let acc = allies.get(other.profile_id);
+      if (!acc) {
+        acc = { name: other.name || 'Unknown', games: 0, wins: 0, losses: 0, combos: new Map() };
+        allies.set(other.profile_id, acc);
+      }
+      if (other.name) acc.name = other.name;
+      acc.games++;
+      if (playerWon) acc.wins++; else acc.losses++;
+
+      if (playerInfo.civilization && other.civilization) {
+        const key = `${playerInfo.civilization}|${other.civilization}`;
+        let combo = acc.combos.get(key);
+        if (!combo) {
+          combo = { games: 0, wins: 0, losses: 0 };
+          acc.combos.set(key, combo);
+        }
+        combo.games++;
+        if (playerWon) combo.wins++; else combo.losses++;
+      }
+    }
+  }
+
+  const winRate = (s: { games: number; wins: number }) => (s.games > 0 ? s.wins / s.games : 0);
+
+  return [...allies.entries()]
+    .filter(([, a]) => a.games >= minGames)
+    .sort(([, a], [, b]) => b.games - a.games || b.wins - a.wins || a.name.localeCompare(b.name))
+    .slice(0, topN)
+    .map(([profileId, acc]) => {
+      const combos: CivComboStat[] = [...acc.combos.entries()]
+        .map(([key, stat]) => {
+          const [myCiv, allyCiv] = key.split('|');
+          return { myCiv, allyCiv, ...stat };
+        })
+        .sort((a, b) => b.games - a.games || winRate(b) - winRate(a) || a.myCiv.localeCompare(b.myCiv));
+      return {
+        profileId,
+        name: acc.name,
+        totalGames: acc.games,
+        wins: acc.wins,
+        losses: acc.losses,
+        combos,
+      };
+    });
 }
