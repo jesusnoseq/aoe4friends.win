@@ -10,6 +10,7 @@ import Coach from './components/Coach';
 import Spinner from './components/Spinner';
 import StatsPage, { type GameStats } from './pages/StatsPage';
 import { buildGameStats } from './services/aoe4worldAnalysis';
+import { initAnalytics, identifyUser, trackSection } from './services/analytics';
 
 interface PlayerSuggestion {
   name: string;
@@ -67,6 +68,16 @@ function MainApp() {
     const desired = gameId ? 'coach' : section;
     setActiveTab((SECTIONS as readonly string[]).includes(desired ?? '') ? (desired as Section) : 'stats');
   }, [section, gameId]);
+
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
+  // Report feature usage: the search screen counts as 'home', otherwise the
+  // active tab is the feature in use.
+  useEffect(() => {
+    trackSection(currentProfileId === null ? 'home' : activeTab);
+  }, [activeTab, currentProfileId]);
 
   // Switch tab and reflect it in the URL when a player is loaded.
   function goToTab(tab: Section) {
@@ -216,6 +227,7 @@ function MainApp() {
       id.toString();
 
     setCurrentNickname(name);
+    identifyUser(name);
     setCurrentProfileId(id);
     setProfileId(formatProfileLabel(name, id));
     addRecentQuery(name, id);
@@ -273,6 +285,7 @@ function MainApp() {
     setSelectedSuggestion(null);
     setShowRecent(false);
     setCurrentNickname('');
+    identifyUser(null);
     setCurrentProfileId(null);
     setActiveTab('stats');
     navigate('/');

@@ -10,6 +10,7 @@
 
 interface Env {
   SUMMARIES: R2Bucket;
+  USAGE: AnalyticsEngineDataset;
 }
 
 const UPSTREAM_ORIGIN = 'https://aoe4world.com';
@@ -19,9 +20,18 @@ const SUMMARY_ROUTE = /^\/api\/players\/\d+\/games\/(\d+)\/summary$/;
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
+
+// Usage events written to Analytics Engine (dataset aoe4friends_usage).
+// Schema: blob1=type, blob2=section, blob3=nickHash, blob4=country,
+// double1=duration seconds, index1=nickHash. See ANALYTICS.md for queries.
+const TRACK_EVENT_TYPES = ['app_open', 'profile_load', 'section_time'];
+const TRACK_SECTIONS = ['home', 'stats', 'balanced', 'checker', 'coach'];
+const NICK_HASH_RE = /^([a-f0-9]{16}|anonymous)$/;
+const MAX_TRACK_BODY_CHARS = 1024;
+const MAX_DURATION_SECONDS = 14400;
 
 function fetchUpstream(path: string, search: string): Promise<Response> {
   return fetch(`${UPSTREAM_ORIGIN}${path}${search}`, {
@@ -41,14 +51,18 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
+
+    const url = new URL(request.url);
+    if (request.method === 'POST' && url.pathname === '/api/track') {
+      return handleTrack(request, env);
+    }
     if (request.method !== 'GET') {
       return new Response('Method not allowed', {
         status: 405,
-        headers: { ...CORS_HEADERS, Allow: 'GET, OPTIONS' },
+        headers: { ...CORS_HEADERS, Allow: 'GET, POST, OPTIONS' },
       });
     }
 
-    const url = new URL(request.url);
     const summaryMatch = SUMMARY_ROUTE.exec(url.pathname);
     if (summaryMatch) {
       return serveSummary(summaryMatch[1], url, env, ctx);
@@ -64,6 +78,41 @@ export default {
     return new Response(upstream.body, { status: upstream.status, headers });
   },
 } satisfies ExportedHandler<Env>;
+
+async function handleTrack(request: Request, env: Env): Promise<Response> {
+  const body = await request.text();
+  if (body.length > MAX_TRACK_BODY_CHARS) {
+    return new Response('Payload too large', { status: 413, headers: CORS_HEADERS });
+  }
+
+  let event: { type?: unknown; section?: unknown; nickHash?: unknown; duration?: unknown };
+  try {
+    event = JSON.parse(body);
+  } catch {
+    return new Response('Bad request', { status: 400, headers: CORS_HEADERS });
+  }
+
+  const { type, section, nickHash } = event;
+  if (
+    typeof type !== 'string' || !TRACK_EVENT_TYPES.includes(type) ||
+    typeof section !== 'string' || !TRACK_SECTIONS.includes(section) ||
+    typeof nickHash !== 'string' || !NICK_HASH_RE.test(nickHash)
+  ) {
+    return new Response('Bad request', { status: 400, headers: CORS_HEADERS });
+  }
+  const rawDuration = Number(event.duration);
+  const duration = Number.isFinite(rawDuration)
+    ? Math.min(Math.max(rawDuration, 0), MAX_DURATION_SECONDS)
+    : 0;
+
+  const country = typeof request.cf?.country === 'string' ? request.cf.country : '';
+  env.USAGE.writeDataPoint({
+    blobs: [type, section, nickHash, country],
+    doubles: [duration],
+    indexes: [nickHash],
+  });
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
 
 async function serveSummary(
   gameId: string,
