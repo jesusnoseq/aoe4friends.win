@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { Search, Swords, MessageSquare } from 'lucide-react';
-import { analyzeGames } from './services/aoe4worldAnalysis';
 import { Game, Player } from './services/aoe4worldTypes.request';
 import { fetchGamesWithCache, fetchRecentGamesLite } from './services/aoe4worldRequests';
 import { API_BASE_URL } from './services/apiConfig';
@@ -10,6 +9,7 @@ import BalanceChecker from './components/BalanceChecker';
 import Coach from './components/Coach';
 import Spinner from './components/Spinner';
 import StatsPage, { type GameStats } from './pages/StatsPage';
+import { buildGameStats } from './services/aoe4worldAnalysis';
 
 interface PlayerSuggestion {
   name: string;
@@ -204,29 +204,9 @@ function MainApp() {
   // Apply a fetched games list to all the derived state. `complete` records
   // whether these games are the full history (see `gamesComplete`).
   function applyStats(fetchedGames: Game[], id: number, forcedName: string | undefined, complete: boolean) {
-    const analyzed = analyzeGames(fetchedGames, id);
-
     setGames(fetchedGames);
     setGamesComplete(complete);
-    setStats({
-      wins: analyzed.wins,
-      losses: analyzed.losses,
-      totalGames: analyzed.totalGames,
-      winRate: analyzed.winRate,
-      civStats: analyzed.civStats,
-      allies: analyzed.allies,
-      opponents: analyzed.opponents,
-      currentStreak: analyzed.currentStreak,
-      maxWinStreak: analyzed.maxWinStreak || analyzed.longestWinStreak,
-      longestWinStreak: analyzed.longestWinStreak,
-      longestLossStreak: analyzed.longestLossStreak,
-      winRateLast10Games: analyzed.winRateLast10,
-      winRateLast50Games: analyzed.winRateLast50,
-      averageGameLength: analyzed.averageGameLength,
-      durationDistribution: analyzed.durationDistribution,
-      mapStats: analyzed.mapStats,
-      longestGame: analyzed.longestGame,
-    });
+    setStats(buildGameStats(fetchedGames, id));
 
     const name =
       forcedName ||

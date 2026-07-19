@@ -28,9 +28,18 @@ function cellColor(count: number, max: number): string {
 
 const GRID_COLUMNS = '2.5rem repeat(24, 1fr)';
 
-const PlayTimeSection: React.FC<{ games: Game[] }> = ({ games }) => {
+interface PlayTimeSectionProps {
+  games: Game[];
+  // When a date filter is active: end of the selected range and how many
+  // calendar months it spans, so the monthly chart tracks the selection
+  // instead of anchoring on today.
+  anchor?: Date;
+  months?: number;
+}
+
+const PlayTimeSection: React.FC<PlayTimeSectionProps> = ({ games, anchor, months }) => {
   const heatmap = useMemo(() => buildPlayTimeHeatmap(games), [games]);
-  const monthly = useMemo(() => buildGamesPerMonth(games), [games]);
+  const monthly = useMemo(() => buildGamesPerMonth(games, months ?? 18, anchor), [games, anchor, months]);
 
   if (heatmap.total === 0) {
     return <p className="text-gray-400">No games to analyze.</p>;
@@ -84,7 +93,9 @@ const PlayTimeSection: React.FC<{ games: Game[] }> = ({ games }) => {
         </div>
       </div>
 
-      <h4 className="text-sm font-semibold text-gray-300 mt-8 mb-2">Games per month (last 18 months)</h4>
+      <h4 className="text-sm font-semibold text-gray-300 mt-8 mb-2">
+        Games per month{anchor ? '' : ' (last 18 months)'}
+      </h4>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={monthly} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

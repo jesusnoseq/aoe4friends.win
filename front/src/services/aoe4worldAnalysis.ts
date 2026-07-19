@@ -1,5 +1,32 @@
 import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution, RatingProgression, RatingPoint, AllyComboStats, CivComboStat, PlayTimeHeatmap, MonthlyGamesPoint } from './aoe4worldTypes.analysis';
 import { Game, Player } from './aoe4worldTypes.request';
+import type { GameStats } from '../pages/StatsPage';
+
+// Analyze a games list and map the result into the `GameStats` shape the
+// stats views consume. Shared by App.tsx (full history) and the StatsPage
+// date-range filter.
+export function buildGameStats(games: Game[], profileId: number): GameStats {
+  const analyzed = analyzeGames(games, profileId);
+  return {
+    wins: analyzed.wins,
+    losses: analyzed.losses,
+    totalGames: analyzed.totalGames,
+    winRate: analyzed.winRate,
+    civStats: analyzed.civStats,
+    allies: analyzed.allies,
+    opponents: analyzed.opponents,
+    currentStreak: analyzed.currentStreak,
+    maxWinStreak: analyzed.maxWinStreak || analyzed.longestWinStreak,
+    longestWinStreak: analyzed.longestWinStreak,
+    longestLossStreak: analyzed.longestLossStreak,
+    winRateLast10Games: analyzed.winRateLast10,
+    winRateLast50Games: analyzed.winRateLast50,
+    averageGameLength: analyzed.averageGameLength,
+    durationDistribution: analyzed.durationDistribution,
+    mapStats: analyzed.mapStats,
+    longestGame: analyzed.longestGame,
+  };
+}
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
   const opponents: { [profile_id: number]: AllyOpponentStat & { profile_id: number; name: string } } = {};
@@ -384,11 +411,12 @@ export function buildPlayTimeHeatmap(games: Game[]): PlayTimeHeatmap {
   return { counts, max, total };
 }
 
-// One point per calendar month for the most recent `months` months (oldest first),
-// empty months included as zero. Games older than the window are dropped.
-export function buildGamesPerMonth(games: Game[], months: number = 18): MonthlyGamesPoint[] {
+// One point per calendar month for the `months` months ending at `anchor`
+// (oldest first), empty months included as zero. Games outside the window are
+// dropped.
+export function buildGamesPerMonth(games: Game[], months: number = 18, anchor: Date = new Date()): MonthlyGamesPoint[] {
   const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  const now = new Date();
+  const now = anchor;
   const points: MonthlyGamesPoint[] = [];
   const index = new Map<string, number>();
   for (let i = months - 1; i >= 0; i--) {
