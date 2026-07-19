@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Search } from 'lucide-react';
 import Spinner from './Spinner';
 import CoachPlayerReview from './CoachPlayerReview';
+import CoachTeamOverview from './CoachTeamOverview';
 import RecentGamesPicker from './RecentGamesPicker';
 import { parsePlayerGameUrl, fetchGameSummary, fetchLatestFinishedGameSummary } from '../services/coach/summaryService';
 import { reviewGame, type GameReview } from '../services/coach/engine';
@@ -175,6 +176,7 @@ export default function Coach({ currentPlayer, initialProfileId, initialGameId, 
             <span>Duration: <strong className="text-white">{formatGameTime(review.duration)}</strong></span>
             <span>Game: <strong className="text-white">#{review.gameId}</strong></span>
           </div>
+          <CoachTeamOverview overview={review.overview} />
           {review.teams.map(team => (
             <div key={team.team}>
               <h3 className="text-lg font-semibold text-gray-300 mb-2 px-1">

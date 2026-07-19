@@ -2,6 +2,7 @@ import { type GameSummary, type SummaryPlayer } from './types';
 import { type CoachTopic, type Finding } from './findings';
 import { buildPlayerContext } from './context';
 import { COACH_RULES } from './rules';
+import { buildTeamOverview, type TeamOverview } from './overview';
 
 export interface PlayerReview {
   player: SummaryPlayer;
@@ -18,6 +19,7 @@ export interface GameReview {
   leaderboard?: string;
   duration: number;
   teams: Array<{ team: number; teamName?: string; players: PlayerReview[] }>;
+  overview: TeamOverview;
 }
 
 const SEVERITY_ORDER: Record<Finding['severity'], number> = { critical: 0, warning: 1, info: 2 };
@@ -55,11 +57,19 @@ export function reviewGame(summary: GameSummary): GameReview {
     group.players.push(reviewPlayer(summary, player));
     byTeam.set(team, group);
   }
+  let overview: TeamOverview = { teams: [] };
+  try {
+    overview = buildTeamOverview(summary);
+  } catch (e) {
+    // A malformed summary must never take down the whole review.
+    console.warn('Coach team overview failed:', e);
+  }
   return {
     gameId: summary.gameId,
     mapName: summary.mapName,
     leaderboard: summary.leaderboard,
     duration: summary.duration,
     teams: [...byTeam.values()].sort((a, b) => a.team - b.team),
+    overview,
   };
 }

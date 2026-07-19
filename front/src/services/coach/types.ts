@@ -20,11 +20,31 @@ export interface SummaryPlayer {
   teamName?: string;
   apm?: number;
   result?: string;
+  scores?: PlayerScores;
+  totalResourcesGathered?: ResourceTotals;
+  totalResourcesSpent?: ResourceTotals;
   // Action name (camelCase, often with civ suffixes like ...Jpn) -> game-time seconds.
   actions?: Record<string, number[]>;
   buildOrder?: BuildOrderEntry[];
   resources?: ResourceSeries;
   _stats?: Record<string, number>;
+}
+
+export interface PlayerScores {
+  total?: number;
+  military?: number;
+  economy?: number;
+  technology?: number;
+  society?: number;
+}
+
+export interface ResourceTotals {
+  food?: number;
+  gold?: number;
+  stone?: number;
+  wood?: number;
+  oliveoil?: number; // Byzantine olive oil / Macedonian silver slot
+  total?: number;
 }
 
 export interface BuildOrderEntry {
