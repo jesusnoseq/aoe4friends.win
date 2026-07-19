@@ -7,6 +7,7 @@ import TeamPerformance from '../components/TeamPerformance';
 import GameDurationChart from '../components/GameDurationChart';
 import MapBarChart from '../components/MapBarChart';
 import RatingProgressionChart from '../components/RatingProgressionChart';
+import PlayTimeSection from '../components/PlayTimeSection';
 import { Game } from '../services/aoe4worldTypes.request';
 import { DurationDistribution } from '../services/aoe4worldTypes.analysis';
 
@@ -240,6 +241,8 @@ export default function StatsPage({ stats, games, profileId, nickname }: Props) 
         <RatingProgressionChart games={games} profileId={profileId} />
       </div>
 
+
+
       {/* Civilization Performance */}
       <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
         <h3 className="text-xl font-semibold mb-4">Civilization Performance</h3>
@@ -265,6 +268,12 @@ export default function StatsPage({ stats, games, profileId, nickname }: Props) 
           }} />
         </div>
       )}
+
+      {/* When Do You Play */}
+      <div className="bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700/40">
+        <h3 className="text-xl font-semibold mb-4">When Do You Play</h3>
+        <PlayTimeSection games={games} />
+      </div>
 
       {/* Top Maps Section */}
       {stats.mapStats && (
