@@ -1,4 +1,4 @@
-import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution, RatingProgression, RatingPoint, AllyComboStats, CivComboStat } from './aoe4worldTypes.analysis';
+import {  AnalyzeGamesResult, CivStat, AllyOpponentStat, DurationDistribution, RatingProgression, RatingPoint, AllyComboStats, CivComboStat, PlayTimeHeatmap, MonthlyGamesPoint } from './aoe4worldTypes.analysis';
 import { Game, Player } from './aoe4worldTypes.request';
 
 export function analyzeGames(games: Game[], profileId: number): AnalyzeGamesResult {
@@ -366,4 +366,45 @@ export function buildAllyCivCombos(
         combos,
       };
     });
+}
+
+// Counts every game (including ongoing ones, matching analyzeGames). Uses the
+// browser's local timezone; started_at is an ISO string at runtime despite its type.
+export function buildPlayTimeHeatmap(games: Game[]): PlayTimeHeatmap {
+  const counts: number[][] = Array.from({ length: 7 }, () => Array<number>(24).fill(0));
+  let max = 0;
+  let total = 0;
+  for (const game of games) {
+    const d = new Date(game.started_at);
+    if (isNaN(d.getTime())) continue;
+    const c = ++counts[d.getDay()][d.getHours()];
+    if (c > max) max = c;
+    total++;
+  }
+  return { counts, max, total };
+}
+
+// One point per calendar month for the most recent `months` months (oldest first),
+// empty months included as zero. Games older than the window are dropped.
+export function buildGamesPerMonth(games: Game[], months: number = 18): MonthlyGamesPoint[] {
+  const monthKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  const now = new Date();
+  const points: MonthlyGamesPoint[] = [];
+  const index = new Map<string, number>();
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    index.set(monthKey(d), points.length);
+    points.push({
+      key: monthKey(d),
+      label: d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }),
+      count: 0,
+    });
+  }
+  for (const game of games) {
+    const d = new Date(game.started_at);
+    if (isNaN(d.getTime())) continue;
+    const idx = index.get(monthKey(d));
+    if (idx !== undefined) points[idx].count++;
+  }
+  return points;
 }

@@ -81,3 +81,16 @@ export interface RatingProgression {
   // one series per leaderboard the player has rated games in
   byLeaderboard: { [leaderboard: string]: RatingPoint[] };
 }
+
+export interface PlayTimeHeatmap {
+  // counts[day][hour]; day = Date.getDay() (0=Sun..6=Sat), hour local 0–23. Always 7×24, zero-filled.
+  counts: number[][];
+  max: number;    // highest single-cell count (0 when no games)
+  total: number;  // games counted
+}
+
+export interface MonthlyGamesPoint {
+  key: string;    // "YYYY-MM"
+  label: string;  // locale short label, e.g. "Jul 26"
+  count: number;  // 0 for empty months
+}
