@@ -164,15 +164,28 @@ function TugRow({ metric, left, right }: { metric: MetricDef; left: number; righ
   );
 }
 
+const AWARD_CRITERIA: Record<string, string> = {
+  'MVP': 'Highest total score on the team (military + economy + technology + society)',
+  'Top slayer': 'Most enemy units killed on the team',
+  'Biggest hoarder': 'Most gathered resources left unspent on the team',
+};
+
 function AwardChips({ team }: { team: TeamTotals }) {
   if (team.awards.length === 0) return null;
   return (
     <p className="mt-1 flex flex-wrap gap-1">
-      {team.awards.map(a => (
-        <span key={a.label} className="px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 text-[11px]" title={a.detail}>
-          {a.label}: {a.playerName}
-        </span>
-      ))}
+      {team.awards.map(a => {
+        const criteria = AWARD_CRITERIA[a.label];
+        return (
+          <span
+            key={a.label}
+            className="px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 text-[11px] cursor-help"
+            title={criteria ? `${criteria} — ${a.detail}` : a.detail}
+          >
+            {a.label}: {a.playerName}
+          </span>
+        );
+      })}
     </p>
   );
 }
