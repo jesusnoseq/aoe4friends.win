@@ -121,12 +121,13 @@ const noRelics: CoachRule = {
 // ============================================================================
 // Rule 3 — Late economic upgrades (economy)
 // Gather-rate upgrades (tier 2/3/4 unlock in Feudal/Castle/Imperial) pay for
-// themselves quickly; research them soon after aging up.
+// themselves quickly; research them soon after aging up. Tughlaq Dynasty
+// replaces them with Worker Elephant dropoff upgrades (HarvestDropoff2/3/4).
 // ============================================================================
 
 export const ECON_UPGRADES_CONFIG = {
   lateAfterSeconds: 360, // 6 min after reaching the age
-  actionKeyPattern: /^upgradeEcon.*Rate([234])/,
+  actionKeyPattern: /^upgradeEcon.*(?:Rate|Dropoff)([234])/,
 };
 
 const ECON_TIER_TO_AGE: Record<string, keyof AgeTimes> = { '2': 'feudal', '3': 'castle', '4': 'imperial' };
@@ -295,13 +296,14 @@ export const UNIT_CLASS_TECHS: Array<{
   {
     unitClass: 'cavalry',
     unitKeywords: [],
+    // Mongols and Golden Horde research Biology at the blacksmith instead of
+    // a university; the prefix/icon match still finds it.
     actionPrefixes: ['upgradeTechUniversityBiology'],
     iconKeywords: ['biology'],
     techName: 'Biology',
     minUnits: 8,
-    // French have Royal Bloodlines instead; Macedonians and Golden Horde
-    // have no university (and no known Biology equivalent).
-    excludeCivs: ['french', 'jeanne_darc', 'macedonian_dynasty', 'golden_horde'],
+    // These civs have an equivalent tech instead (entries below).
+    excludeCivs: ['french', 'jeanne_darc', 'jin_dynasty', 'macedonian_dynasty'],
   },
   {
     unitClass: 'cavalry',
@@ -311,6 +313,24 @@ export const UNIT_CLASS_TECHS: Array<{
     techName: 'Royal Bloodlines',
     minUnits: 8,
     civs: ['french', 'jeanne_darc'],
+  },
+  {
+    unitClass: 'cavalry',
+    unitKeywords: [],
+    actionPrefixes: ['upgradePaddedLamellar'],
+    iconKeywords: ['lamellar'],
+    techName: 'Padded Lamellar',
+    minUnits: 8,
+    civs: ['jin_dynasty'],
+  },
+  {
+    unitClass: 'cavalry',
+    unitKeywords: [],
+    actionPrefixes: ['upgradeScaleBarding', 'upgradeArsenalScaleBarding'],
+    iconKeywords: ['barding'],
+    techName: 'Scale Barding',
+    minUnits: 8,
+    civs: ['macedonian_dynasty'],
   },
   {
     unitClass: 'ranged',
@@ -328,7 +348,7 @@ export const UNIT_CLASS_TECHS: Array<{
     iconKeywords: ['chemistry'],
     techName: 'Chemistry',
     minUnits: 6,
-    excludeCivs: ['macedonian_dynasty', 'golden_horde'], // no university
+    excludeCivs: ['macedonian_dynasty', 'golden_horde', 'mongols'], // no university
   },
 ];
 
@@ -698,8 +718,8 @@ const stoppedVillagerProduction: CoachRule = {
 // ============================================================================
 
 export const UNIVERSITY_CONFIG = {
-  // Macedonians use the Arsenal; Golden Horde has no university either.
-  excludedCivs: ['macedonian_dynasty', 'golden_horde'],
+  // Macedonians use the Arsenal; Mongols and Golden Horde have no university.
+  excludedCivs: ['macedonian_dynasty', 'golden_horde', 'mongols'],
   graceAfterImperialSeconds: 180,
   iconKeyword: 'university',
 };
